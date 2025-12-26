@@ -54,7 +54,7 @@ def get_vitals_matrix_12h():
     aki_times_df = pd.read_csv(aki_times_file, dtype={'subject_id': str})
     aki_times_df['AKI_time'] = pd.to_datetime(aki_times_df['AKI_time'], errors='coerce')
     aantal_zonder_AKI_time = aki_times_df['AKI_time'].isna().sum()
-    print("Aantal subject_id’s zonder AKI_time:", aantal_zonder_AKI_time)
+    # print("Aantal subject_id’s zonder AKI_time:", aantal_zonder_AKI_time)
     # add all vital data
     vitals_list = [pd.read_csv(vf, dtype={'stay_id': str}) for vf in vitals_files]
     vitals_df = pd.concat(vitals_list, ignore_index=True)
@@ -93,7 +93,7 @@ def get_vitals_matrix_12h():
             fill_value=np.nan).reset_index()
 
     all_vitals_matrix = vitals_matrix.round(2)
-    vitals_columns = all_vitals_matrix.columns.drop('subject_id')
+    #vitals_columns = all_vitals_matrix.columns.drop('subject_id')
 
     # # Aantal subject_ids waar Temperature een waarde heeft
     # num_temperature = vitals_matrix['Temperature'].notna().sum()
@@ -101,8 +101,8 @@ def get_vitals_matrix_12h():
 
     # vitals_matrix.to_csv("vitals_check.csv")
     # Controleer uniekheid van subject_id
-    num_subjects = vitals_matrix['subject_id'].nunique()
-    total_rows = len(vitals_matrix)
+    # num_subjects = vitals_matrix['subject_id'].nunique()
+    # total_rows = len(vitals_matrix)
     # print(f"Aantal unieke subject_ids: {num_subjects}")
     # print(f"Totaal aantal rijen in vitals_matrix: {total_rows}")
 

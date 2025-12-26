@@ -7,10 +7,12 @@ def fill_matrix_with_zeros():
     final_matrix = pd.read_csv('matrix_overview_without_all_NaN.csv')
     final_matrix = final_matrix.replace(r"^\s*$", np.nan, regex=True)
 
-    print("BEFORE drop:", final_matrix.shape)
+    #print("BEFORE drop:", final_matrix.shape)
 
     #We halen temperature eruit
-    final_matrix.drop(columns=['Temperature', 'Norepinephrine_x'], inplace=True)
+    final_matrix.drop(columns=['Temperature'], inplace=True)
+    # final_matrix.drop(columns=['Temperature', 'Norepinephrine_x'], inplace=True)
+
 
     vitals = ['age_12h_before_AKI', 'Diastolic Blood Pressure','Heart Rate',
               'Mean Arterial Pressure','Oxygen Saturation','Respiratory Rate',
@@ -42,15 +44,15 @@ def fill_matrix_with_zeros():
         "median": list(medians_used.values())
     })
 
-    print("AFTER drop:", final_matrix.shape)
+    #print("AFTER drop:", final_matrix.shape)
 
-    final_matrix.to_csv('matrix_final_final.csv', index=False)
+    #final_matrix.to_csv('matrix_final_final.csv', index=False)
 
-    return missing_values, medians_df
+    return missing_values, medians_df,final_matrix
 
-result_1, result_2 = fill_matrix_with_zeros()
-print(result_1[result_1['missing_values'] > 0])
-print(result_2)
+# result_1, result_2 = fill_matrix_with_zeros()
+# print(result_1[result_1['missing_values'] > 0])
+# print(result_2)
 
 
 

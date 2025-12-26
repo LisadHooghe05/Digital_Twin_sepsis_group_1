@@ -74,7 +74,10 @@ def AKI_detection(SEPSIS_CSV,CREAT_CSV) -> pd.DataFrame:
 
         AKI_df = AKI_df.merge(aki48_any, on="subject_id", how="left")
         AKI_df = AKI_df.merge(aki48_time, on="subject_id", how="left")
-        AKI_df["AKI_48h"] = AKI_df["AKI_48h"].fillna(False)
+        # AKI_df["AKI_48h"] = AKI_df["AKI_48h"].fillna(False)
+        AKI_df["AKI_48h"] = AKI_df["AKI_48h"].eq(True)
+
+
 
     # --- 7d criterium: >= 1.5 * baseline binnen 7 dagen na sepsis ---
     # Merge alleen baseline_value (NIET sepsis_time opnieuw)
@@ -112,7 +115,9 @@ def AKI_detection(SEPSIS_CSV,CREAT_CSV) -> pd.DataFrame:
 
         AKI_df = AKI_df.merge(aki7_any, on="subject_id", how="left")
         AKI_df = AKI_df.merge(aki7_time, on="subject_id", how="left")
-        AKI_df["AKI_7d"] = AKI_df["AKI_7d"].fillna(False)
+        # AKI_df["AKI_7d"] = AKI_df["AKI_7d"].fillna(False)
+        AKI_df["AKI_7d"] = AKI_df["AKI_7d"].eq(True)
+
 
     # --- Combine binary AKI + onset time ---
     if "AKI_48h" not in AKI_df.columns:
@@ -131,12 +136,7 @@ def AKI_detection(SEPSIS_CSV,CREAT_CSV) -> pd.DataFrame:
     AKI_df["AKI_status"] = AKI_df["AKI"].map(
     {True: "AKI", False: "No AKI"})
 
-    AKI_subjects_df = (
-    AKI_df.loc[AKI_df["AKI"], ["subject_id"]]
-    .drop_duplicates()
-    .assign(AKI_stage="AKI")
-    .reset_index(drop=True))
-    return AKI_df,AKI_subjects_df
+    return AKI_df
 
 
 

@@ -68,13 +68,16 @@ def get_ACE_ARB_matrix_12h():
     ace_series = drug_df_12h.groupby('subject_id')['drug_class'].apply(lambda x: int('ACE' in x.values))
     arb_series = drug_df_12h.groupby('subject_id')['drug_class'].apply(lambda x: int('ARB' in x.values))
 
-    matrix['ACE'] = matrix['subject_id'].map(ace_series).fillna(0).astype(int)
-    matrix['ARB'] = matrix['subject_id'].map(arb_series).fillna(0).astype(int)
+    # matrix['ACE'] = matrix['subject_id'].map(ace_series).fillna(0).astype(int)
+    # matrix['ARB'] = matrix['subject_id'].map(arb_series).fillna(0).astype(int)
 
+    matrix['ACE'] = matrix['subject_id'].map(ace_series).eq(1).astype(int)
+    matrix['ARB'] = matrix['subject_id'].map(arb_series).eq(1).astype(int)
     # Fill 1/0 for specific drugs
     for drug in ACE_drugs + ARB_drugs:
         matrix[drug] = matrix['subject_id'].isin(
-            drug_df_12h[drug_df_12h['drug'] == drug]['subject_id']).replace({True: 1, False: 0})  # Set NaN if drug wasn't given
+            #drug_df_12h[drug_df_12h['drug'] == drug]['subject_id']).replace({True: 1, False: 0})  # Set NaN if drug wasn't given
+            drug_df_12h[drug_df_12h['drug'] == drug]['subject_id']).eq(True).astype(int)  # Set NaN if drug wasn't given
 
     # Reorder columns
     matrix_ECM = matrix[columns_order]

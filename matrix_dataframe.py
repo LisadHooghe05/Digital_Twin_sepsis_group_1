@@ -22,7 +22,7 @@ def build_feature_matrix(repo_root=None):
 
     def add_df_to_matrix(matrix, df, key="subject_id", columns=None):
         """
-        Snelle toevoeging van features via index-join
+        Quick additon of features by using index-join 
         """
         if key in df.columns:
             df = df.set_index(key)
@@ -41,7 +41,7 @@ def build_feature_matrix(repo_root=None):
         .set_index("subject_id")
     )
 
-    print(f"Amount of AKI subjects: {len(aki_subjects)}")
+    print(f"Amount of sepsis patients with AKI: {len(aki_subjects)}")
 
 
     # filter subjects on vitals
@@ -51,7 +51,7 @@ def build_feature_matrix(repo_root=None):
     valid_subjects = vitals_matrix["subject_id"].unique()
     aki_subjects = aki_subjects.loc[
         aki_subjects.index.isin(valid_subjects)]
-    print(f"Aantal subject_id's na filtering op vitals: {len(aki_subjects)}")
+    print(f"Amount of patients after filtering on vitals: {len(aki_subjects)}")
 
     # init matrix
     matrix = aki_subjects.copy()
@@ -88,7 +88,6 @@ def build_feature_matrix(repo_root=None):
     ace_arb_df = get_ACE_ARB_matrix_12h()
     matrix = add_df_to_matrix(matrix, ace_arb_df)
 
-
     # add vasopressors
     from Matrix_data.vasopressors import get_vasopressor_matrix_12h
     vasopressor_df = get_vasopressor_matrix_12h()
@@ -101,42 +100,9 @@ def build_feature_matrix(repo_root=None):
     matrix = add_df_to_matrix(matrix, other_meds_df())
 
 
-    # # # add ventilation and inotropics
-    # # from Matrix_data.Generate_dfx_adam import build_patient_feature_matrix
-
-    # # inotropics = [
-    # #     "Dopamine", "Norepinephrine", "Epinephrine",
-    # #     "Milrinone", "Metoprolol", "Esmolol",
-    # #     "Verapamil", "Diltiazem"
-    # # ]
-
-    # # ventilations = [
-    # #     "Intubation",
-    # #     "Non-invasive ventilation",
-    # #     "Invasive ventilation"
-    # # ]
-
-    # # vent_inotrope_df = build_patient_feature_matrix(
-    # #     inotropics,
-    # #     ventilations,
-    # #     PATH_DATA,
-    # #     PATH_DATA / "sepsis_diagnose_time.csv",
-    # #     PATH_DATA / "creatinine_over_time.csv",
-    # #     PATH_DATA / "procedureevents_sepsis.csv",
-    # #     input_csvs=[
-    # #         PATH_DATA / "inputevents_sepsis1.csv",
-    # #         PATH_DATA / "inputevents_sepsis2.csv",
-    # #         PATH_DATA / "inputevents_sepsis3.csv",
-    # #     ]
-    # # )
-
-    # # matrix = add_df_to_matrix(matrix, vent_inotrope_df)
-
-
-    # add ventilation and isotropics
-    from Matrix_data.ventilation_isotropics import matrix_dataframe_ventilationandisotropics
-    matrix = add_df_to_matrix(matrix, matrix_dataframe_ventilationandisotropics())
-
+    # # # add ventilation and isotropics
+    from Matrix_data.ventilation_isotropics import build_patient_feature_matrix
+    matrix=add_df_to_matrix(matrix, build_patient_feature_matrix())
 
     # add presepsis conditions of patients
     from Matrix_data.presepsis_conditions import get_conditions_matrix_sepsis
@@ -160,8 +126,8 @@ def build_feature_matrix(repo_root=None):
     # make a nice matrix that is usable
     matrix.reset_index(inplace=True)
 
-    matrix.to_csv("matrix_overview.csv", index=False)
-    print(f"Amount subject_id's: {matrix['subject_id'].nunique()}")
+    #matrix.to_csv("matrix_overview.csv", index=False)
+    #print(f"Amount subject_id's: {matrix['subject_id'].nunique()}")
 
 
     exclude = {"subject_id", "gender", "age_12h_before_AKI"}
@@ -172,12 +138,12 @@ def build_feature_matrix(repo_root=None):
 
     matrix.to_csv("matrix_overview_without_all_NaN.csv", index=False)
 
-    print(
-        "Amount rows where all columns (besides subject_id, gender, age) are NaN:",
-        mask_empty.sum()
-    )
+    # print(
+    #     "Amount rows where all columns (besides subject_id, gender, age) are NaN:",
+    #     mask_empty.sum()
+    # )
 
-    print(f"Amount subject_id's after filtering: {matrix['subject_id'].nunique()}")
+    #print(f"Amount of patients after filtering out the patients with only NaN: {matrix['subject_id'].nunique()}")
 
     return matrix
 

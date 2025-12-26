@@ -55,7 +55,7 @@ def compute_ICU_stays_window():
         (merged["intime"] <= merged["AKI_time"]) &    # 'intime' moet voor of gelijk aan AKI_time liggen
         (merged["outtime"] >= merged["start_point"])  # 'outtime' moet na of gelijk aan start_point liggen
     ]
-
+    merged_window = merged_window.copy()
     # --- Bereken het aantal dagen tussen 'intime' en 'AKI_time' ---
     merged_window["ICU_stay_12hforakitime"] = (merged_window["outtime"] - merged_window["intime"]).dt.days
 
