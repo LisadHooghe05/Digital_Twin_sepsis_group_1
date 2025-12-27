@@ -55,26 +55,28 @@ def get_vitals_matrix_12h():
     aki_times_df['AKI_time'] = pd.to_datetime(aki_times_df['AKI_time'], errors='coerce')
     aantal_zonder_AKI_time = aki_times_df['AKI_time'].isna().sum()
     # print("Aantal subject_id’s zonder AKI_time:", aantal_zonder_AKI_time)
-    # add all vital data
+
+    # Add all vital data
     vitals_list = [pd.read_csv(vf, dtype={'stay_id': str}) for vf in vitals_files]
     vitals_df = pd.concat(vitals_list, ignore_index=True)
 
-    # add subject id's couple them to the stay_id
+    # Add subject id's couple them to the stay_id
     vitals_df = vitals_df.merge(sepsis_df[['stay_id', 'subject_id']], on='stay_id', how='left')
-    # only AKI subjects
+
+    # Only AKI subjects
     vitals_df = vitals_df[vitals_df['subject_id'].isin(aki_subjects)]
 
-    # change charttime
+    # Change charttime
     vitals_df['charttime'] = pd.to_datetime(vitals_df['charttime'], errors='coerce')
 
-    # add AKI_time
+    # Add AKI_time
     vitals_df = vitals_df.merge(aki_times_df[['subject_id', 'AKI_time']], on='subject_id', how='left')
 
-    # compute hours hours_before_AKI and filter on 12h
+    # Compute hours hours_before_AKI and filter on 12h
     vitals_df['hours_before_AKI'] = (vitals_df['AKI_time'] - vitals_df['charttime']).dt.total_seconds() / 3600
     vitals_df_12h = vitals_df[(vitals_df['hours_before_AKI'] >= 0) & (vitals_df['hours_before_AKI'] <= 12)]
 
-    # filter extreme values per vital
+    # Filter extreme values per vital
     vitals_df_12h = vitals_df_12h[
             ((vitals_df_12h['label'] == 'Heart Rate') & vitals_df_12h['valuenum'].between(20, 300)) |
             ((vitals_df_12h['label'] == 'Systolic Blood Pressure') & vitals_df_12h['valuenum'].between(50, 250)) |
@@ -93,22 +95,6 @@ def get_vitals_matrix_12h():
             fill_value=np.nan).reset_index()
 
     all_vitals_matrix = vitals_matrix.round(2)
-    #vitals_columns = all_vitals_matrix.columns.drop('subject_id')
-
-    # # Aantal subject_ids waar Temperature een waarde heeft
-    # num_temperature = vitals_matrix['Temperature'].notna().sum()
-    # print(f"Aantal subject_ids met Temperature-waarde: {num_temperature}")
-
-    # vitals_matrix.to_csv("vitals_check.csv")
-    # Controleer uniekheid van subject_id
-    # num_subjects = vitals_matrix['subject_id'].nunique()
-    # total_rows = len(vitals_matrix)
-    # print(f"Aantal unieke subject_ids: {num_subjects}")
-    # print(f"Totaal aantal rijen in vitals_matrix: {total_rows}")
-
     return all_vitals_matrix
 
-# if __name__ == "__main__":
-#     vitals_matrix = get_vitals_matrix_12h()
-#     vitals_matrix.to_csv("check_vitals2.csv")
-#     print(vitals_matrix)
+

@@ -36,8 +36,7 @@ def get_ACE_ARB_matrix_12h():
     drug_df = drug_df.merge(
         aki_onset_df[['subject_id','AKI_time']],
         on='subject_id',
-        how='left'
-    )
+        how='left')
 
     # Keep only drugs given within 12h before AKI onset
     drug_df['hours_before_AKI'] = (drug_df['AKI_time'] - drug_df['stoptime']).dt.total_seconds() / 3600
@@ -68,11 +67,10 @@ def get_ACE_ARB_matrix_12h():
     ace_series = drug_df_12h.groupby('subject_id')['drug_class'].apply(lambda x: int('ACE' in x.values))
     arb_series = drug_df_12h.groupby('subject_id')['drug_class'].apply(lambda x: int('ARB' in x.values))
 
-    # matrix['ACE'] = matrix['subject_id'].map(ace_series).fillna(0).astype(int)
-    # matrix['ARB'] = matrix['subject_id'].map(arb_series).fillna(0).astype(int)
-
+    # Fill the ACE or ARB with 1 if the subject id got something of the ace_series or the arb_series
     matrix['ACE'] = matrix['subject_id'].map(ace_series).eq(1).astype(int)
     matrix['ARB'] = matrix['subject_id'].map(arb_series).eq(1).astype(int)
+
     # Fill 1/0 for specific drugs
     for drug in ACE_drugs + ARB_drugs:
         matrix[drug] = matrix['subject_id'].isin(

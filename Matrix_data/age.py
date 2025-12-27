@@ -36,6 +36,3 @@ def get_age_12h_before_AKI():
 
     return result_age
 
-# # Gebruik:
-# df_age = get_age_12h_before_AKI()
-# print(df_age)

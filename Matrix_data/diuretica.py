@@ -6,20 +6,12 @@ import seaborn as sns
 
 def get_diuretics_matrix_12h():
     """
-    Builds a wide-format matrix for diuretics administration within a specified
-    number of hours before AKI onset.
-    
-    Parameters:
-    - sepsis_data: DataFrame with all sepsis events
-    - AKI_df: DataFrame with columns ['subject_id','AKI_stage']
-    - AKI_onset_df: DataFrame with columns ['subject_id','AKI_onset_time']
-    - diuretics_list: list of diuretics to keep (default common ones)
-    - hours_before: time window in hours before AKI onset to include events
+    Builds a wide-format matrix for diuretics administration within 12 hours before AKI onset.
     
     Returns:
     - diuretics_matrix: pd.DataFrame in wide format (subject_id × diuretics)
     """
-    #Load data
+    # Load data
     REPO_ROOT = Path(__file__).resolve().parent.parent
     PATH_DATA = REPO_ROOT / "data"
 
@@ -30,7 +22,7 @@ def get_diuretics_matrix_12h():
             PATH_DATA / "inputevents_sepsis3.csv"]
     sepsis_path = PATH_DATA / "sepsis_diagnose_time.csv"
 
-    #Loading sepsis data
+    # Loading sepsis data
     sepsis_data = pd.concat([open_as_df(p, sepsis_path) for p in input_paths], ignore_index=True)
 
     def get_column_index(df, column_name):
@@ -44,7 +36,7 @@ def get_diuretics_matrix_12h():
             raise ValueError(f"Column'{column_name}' not found in Dataframe")
 
     df = sepsis_data 
-    col_name = "item_label" # -> changes this to get another column for example item_category for fluids/intake
+    col_name = "item_label" # -> change this to get another column for example item_category for fluids/intake
     col_index = get_column_index(df,col_name)
     #print(f"Column'{col_name}' is at index '{col_index}'")
 
@@ -65,6 +57,7 @@ def get_diuretics_matrix_12h():
     df_diu['subject_id'] = df_diu['subject_id'].astype(str)
     AKI_onset_df['subject_id'] = AKI_onset_df['subject_id'].astype(str)
 
+    # Merging the subject_id with AKI_stage and AKI_time
     df_merged = df_diu.merge(
         AKI_df[['subject_id','AKI_stage']],
         on='subject_id',
@@ -74,6 +67,7 @@ def get_diuretics_matrix_12h():
         on='subject_id',
         how='left')
 
+    # Make datetime from endtime and AKI_time
     df_merged['endtime'] = pd.to_datetime(df_merged['endtime'])
     df_merged['AKI_time'] = pd.to_datetime(df_merged['AKI_time'])
     
@@ -83,7 +77,7 @@ def get_diuretics_matrix_12h():
     # Filter: only doses withing 12 hours before AKI onset
     df_merged_12h = df_merged[(df_merged['hours_before_AKI'] >= 0) & (df_merged['hours_before_AKI'] <= 12)].copy()
 
-    # Controle
+    # Control
     #print(df_merged_12h[['item_label','AKI_stage','amount','endtime','AKI_onset_time','hours_before_AKI']].head())
 
     # Pivot to wide format: rows = subject_id, columns = diuretica, value = sum of the amounts
@@ -96,6 +90,3 @@ def get_diuretics_matrix_12h():
     diuretics_matrix_12h = diuretics_matrix_12h.round(2)
 
     return diuretics_matrix_12h
-
-# diu = get_diuretics_matrix_12h()
-# print(diu)

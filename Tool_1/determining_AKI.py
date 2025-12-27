@@ -15,15 +15,41 @@ SEPSIS_CSV  = "sepsis_diagnose_time.csv"
 CREAT_CSV   = "creatinine_over_time.csv"
 
 def AKI_detection(SEPSIS_CSV,CREAT_CSV) -> pd.DataFrame:
-    # --- Upstream pipeline (zoals jij al had) ---
+    """
+    Detect acute kidney injury (AKI) in sepsis patients using creatinine measurements.
+
+    AKI is identified using two criteria relative to sepsis onset:
+    1. **48-hour criterion**: Increase in serum creatinine ≥ 0.3 mg/dL within any 48-hour window after sepsis.
+    2. **7-day criterion**: Serum creatinine ≥ 1.5 × baseline within 7 days after sepsis.
+
+    The function returns a patient-level DataFrame with AKI indicators, onset times, 
+    and days from sepsis to AKI.
+
+    Parameters
+    - SEPSIS_CSV : str -> Path to the CSV file containing sepsis diagnosis times.
+    - CREAT_CSV : str -> Path to the CSV file containing creatinine measurements (columns: subject_id, charttime, valuenum).
+
+    Returns
+    pd.DataFrame
+        A DataFrame indexed by patient (`subject_id`) containing:
+        - baseline_value: Baseline creatinine for each patient
+        - AKI_48h, AKI_7d: Boolean flags for AKI per criterion
+        - AKI_time_48h, AKI_time_7d: Onset time per criterion
+        - AKI: Boolean flag if AKI detected by any criterion
+        - AKI_time: Earliest AKI onset time
+        - days_to_AKI: Days from sepsis onset to AKI
+        - AKI_status: 'AKI' or 'No AKI'
+    """
+
+    # Upstream pipeline 
     df = extract_creatinine(CREAT_CSV,SEPSIS_CSV)
     summary, sepsis_first, creat = peak_creat(df)
     AKI_df = compute_baseline(sepsis_first, creat, summary).copy()
 
-    # --- Prepare creatinine + sepsis_time (1x mergen, niet dubbel) ---
+    # Prepare creatinine + sepsis_time (1x merge, not 2 times) 
     creat2 = creat.copy()
 
-    # Verwachte kolommen uit jouw creat: subject_id, charttime, valuenum(-> creatinine)
+    # Expected columns from your creatinine data: subject_id, charttime, valuenum (-> creatinine)
     creat2["valuenum"] = pd.to_numeric(creat2["valuenum"], errors="coerce")
     creat2["charttime"] = pd.to_datetime(creat2["charttime"], errors="coerce")
 
@@ -35,27 +61,25 @@ def AKI_detection(SEPSIS_CSV,CREAT_CSV) -> pd.DataFrame:
         on="subject_id",
         how="left")
 
-    # Drop rijen waar we niets mee kunnen
+    # Drop rows that cannot be used
     creat2 = creat2.dropna(subset=["subject_id", "charttime", "sepsis_time", "valuenum"])
 
-    # Alleen post-sepsis (zoals jouw originele aanpak voor 48h-rise)
+    # Only post-sepsis
     creat_post = creat2.loc[creat2["charttime"] >= creat2["sepsis_time"]].copy()
     creat_post = creat_post.sort_values(["subject_id", "charttime"]).reset_index(drop=True)
 
-    # --- 48h criterium: SCr(t) - min(SCr in prior 48h) >= 0.3 ---
+    # 48h criterium: SCr(t) - min(SCr in prior 48h) >= 0.3 
     if creat_post.empty:
-        # Maak lege output kolommen zodat merges niet falen
-        AKI_df["AKI_48h"] = False
+        # Create empty output columns so that merges do not fail        AKI_df["AKI_48h"] = False
         AKI_df["AKI_time_48h"] = pd.NaT
     else:
-        # rolling min per patient; to_numpy() voorkomt reindex issues bij assignment
+        # Rolling minimum per patient; to_numpy() prevents reindexing issues during assignment
         roll_min_48h = (
             creat_post
             .groupby("subject_id", sort=False)
             .rolling("48h", on="charttime")["valuenum"]
             .min()
-            .reset_index(level=0, drop=True)
-        )
+            .reset_index(level=0, drop=True))
 
         creat_post["min_48h"] = roll_min_48h.to_numpy()
         creat_post["AKI_hit_48h"] = (creat_post["valuenum"] - creat_post["min_48h"]) >= 0.3
@@ -63,14 +87,12 @@ def AKI_detection(SEPSIS_CSV,CREAT_CSV) -> pd.DataFrame:
         aki48_any = (
             creat_post.groupby("subject_id")["AKI_hit_48h"]
             .any()
-            .reset_index(name="AKI_48h")
-        )
+            .reset_index(name="AKI_48h"))
         aki48_time = (
             creat_post.loc[creat_post["AKI_hit_48h"]]
             .groupby("subject_id")["charttime"]
             .min()
-            .reset_index(name="AKI_time_48h")
-        )
+            .reset_index(name="AKI_time_48h"))
 
         AKI_df = AKI_df.merge(aki48_any, on="subject_id", how="left")
         AKI_df = AKI_df.merge(aki48_time, on="subject_id", how="left")
@@ -79,18 +101,16 @@ def AKI_detection(SEPSIS_CSV,CREAT_CSV) -> pd.DataFrame:
 
 
 
-    # --- 7d criterium: >= 1.5 * baseline binnen 7 dagen na sepsis ---
-    # Merge alleen baseline_value (NIET sepsis_time opnieuw)
+    # 7-day criterion: >= 1.5 * baseline within 7 days after sepsis 
+    # Merge only baseline_value (DO NOT merge sepsis_time again)
     creat_post = creat_post.merge(
         AKI_df[["subject_id", "baseline_value"]],
         on="subject_id",
-        how="left"
-    )
+        how="left")
 
-    # Beperk tot 0-7d na sepsis voor de 7d-criterion
+    # Restrict to 0-7 days after sepsis for the 7-day criterion
     creat_0to7d = creat_post.loc[
-        creat_post["charttime"] <= (creat_post["sepsis_time"] + pd.Timedelta(days=7))
-    ].copy()
+        creat_post["charttime"] <= (creat_post["sepsis_time"] + pd.Timedelta(days=7))].copy()
 
     if creat_0to7d.empty:
         AKI_df["AKI_7d"] = False
@@ -98,20 +118,17 @@ def AKI_detection(SEPSIS_CSV,CREAT_CSV) -> pd.DataFrame:
     else:
         creat_0to7d["AKI_hit_7d"] = (
             creat_0to7d["baseline_value"].notna()
-            & (creat_0to7d["valuenum"] >= 1.5 * creat_0to7d["baseline_value"])
-        )
+            & (creat_0to7d["valuenum"] >= 1.5 * creat_0to7d["baseline_value"]))
 
         aki7_any = (
             creat_0to7d.groupby("subject_id")["AKI_hit_7d"]
             .any()
-            .reset_index(name="AKI_7d")
-        )
+            .reset_index(name="AKI_7d"))
         aki7_time = (
             creat_0to7d.loc[creat_0to7d["AKI_hit_7d"]]
             .groupby("subject_id")["charttime"]
             .min()
-            .reset_index(name="AKI_time_7d")
-        )
+            .reset_index(name="AKI_time_7d"))
 
         AKI_df = AKI_df.merge(aki7_any, on="subject_id", how="left")
         AKI_df = AKI_df.merge(aki7_time, on="subject_id", how="left")
@@ -119,7 +136,7 @@ def AKI_detection(SEPSIS_CSV,CREAT_CSV) -> pd.DataFrame:
         AKI_df["AKI_7d"] = AKI_df["AKI_7d"].eq(True)
 
 
-    # --- Combine binary AKI + onset time ---
+    # Combine binary AKI + onset time 
     if "AKI_48h" not in AKI_df.columns:
         AKI_df["AKI_48h"] = False
         AKI_df["AKI_time_48h"] = pd.NaT
@@ -131,8 +148,7 @@ def AKI_detection(SEPSIS_CSV,CREAT_CSV) -> pd.DataFrame:
     AKI_df["AKI_time"] = AKI_df[["AKI_time_48h", "AKI_time_7d"]].min(axis=1)
 
     AKI_df["days_to_AKI"] = (
-        (AKI_df["AKI_time"] - AKI_df["sepsis_time"]).dt.total_seconds() / (3600 * 24)
-    )
+        (AKI_df["AKI_time"] - AKI_df["sepsis_time"]).dt.total_seconds() / (3600 * 24))
     AKI_df["AKI_status"] = AKI_df["AKI"].map(
     {True: "AKI", False: "No AKI"})
 
@@ -152,7 +168,7 @@ def quick_check_aki_only(
     df_o.columns = df_o.columns.str.strip()
     df_n.columns = df_n.columns.str.strip()
 
-    # --- ORIG: AKI bepalen uit AKI_stage ---
+    # ORIG: Determine AKI from AKI_stage
     if "AKI_stage" not in df_o.columns:
         raise KeyError(f"ORIG mist 'AKI_stage'. Beschikbaar: {df_o.columns.tolist()}")
 
@@ -162,13 +178,12 @@ def quick_check_aki_only(
     if time_col not in df_o.columns:
         raise KeyError(f"ORIG mist '{time_col}'. Beschikbaar: {df_o.columns.tolist()}")
 
-    # parse tijd (strip lege strings)
+    # Parse time (strip empty strings)
     df_o[time_col] = pd.to_datetime(
         df_o[time_col].astype(str).str.strip().replace({"": None, "NaT": None, "nan": None}),
-        errors="coerce"
-    )
+        errors="coerce")
 
-    # --- NEW: AKI kolom ---
+    # NEW: AKI kolom 
     if "AKI" in df_n.columns:
         df_n["AKI"] = df_n["AKI"].astype(str).str.lower().isin(["true", "1", "yes", "aki"])
     elif "AKI_status" in df_n.columns:
@@ -181,17 +196,16 @@ def quick_check_aki_only(
 
     df_n[time_col] = pd.to_datetime(
         df_n[time_col].astype(str).str.strip().replace({"": None, "NaT": None, "nan": None}),
-        errors="coerce"
-    )
+        errors="coerce")
 
-    # ===== EXTRA PRINT: ORIG missings overall (AKI-only) =====
+    # EXTRA PRINT: Original missing values overall (AKI-only)
     orig_aki = df_o[df_o["AKI"]]
     new_aki = df_n[df_n["AKI"]]
     print(f"ORIG AKI totaal: {len(orig_aki)}")
     print(f"NEW AKI totaal: {len(new_aki)}")
     print(f"ORIG AKI_time missing (alle ORIG AKI): {int(orig_aki[time_col].isna().sum())}")
 
-    # --- Merge voor vergelijking ---
+    # Merge for comparison
     df_o = df_o[["subject_id", "AKI", time_col]].copy()
     df_n = df_n[["subject_id", "AKI", time_col]].copy()
 
@@ -202,7 +216,7 @@ def quick_check_aki_only(
     orig_t = f"{time_col}_orig"
     new_t  = f"{time_col}_new"
 
-    # filter kiezen
+    # Select filter
     if aki_filter == "orig_true":
         m = m[m[orig_aki_col]]
     elif aki_filter == "new_true":
@@ -224,7 +238,7 @@ def quick_check_aki_only(
     n_missing_orig = int(m[orig_t].isna().sum())
     n_mismatch = int((~m["time_match"] & m[new_t].notna() & m[orig_t].notna()).sum())
 
-    # ===== JOUW OUDE OUTPUT =====
+    # Your old output
     print(f"\nAKI filter: {aki_filter}")
     print(f"Totaal in vergelijking:                         {n_total}")
     print(f"Match binnen tolerance ({tolerance}):           {n_match}")

@@ -8,7 +8,7 @@ def get_diuretics2_matrix_12h():
     """
     Builds a 0/1 matrix of diuretics administration within 12h before AKI onset.
     Uses default CSV file paths inside the 'data' folder relative to this script.
-    
+
     Returns:
     - pd.DataFrame: subjects x diuretic types (0/1)
     """
@@ -55,5 +55,4 @@ def get_diuretics2_matrix_12h():
     diu2_matrix_12h = diu2_matrix_12h.round(2)
 
     return diu2_matrix_12h
-# diu2=get_diuretics2_matrix_12h()
-# print(diu2)
+

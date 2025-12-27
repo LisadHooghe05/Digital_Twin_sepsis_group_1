@@ -6,6 +6,11 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 PATH_DATA = REPO_ROOT / "data"
 
 def antibiotica_df():
+    """
+    Returns a DataFrame with the given antibiotica per subject, closest to 12h before AKI onset.
+    Uses internal file paths.
+    """
+    # The paths
     sepsis_path = PATH_DATA / "sepsis_diagnose_time.csv"
     
     input_paths = [
@@ -13,6 +18,7 @@ def antibiotica_df():
     PATH_DATA / "inputevents_sepsis2.csv",
     PATH_DATA / "inputevents_sepsis3.csv"]
     
+    # Different types of anitbiotics
     antibiotics = [
     "Vancomycin", "Teicoplanin", "Co-trimoxazole", "Sulfadiazine",
     "Sulfacetamide", "Gentamicin", "Tobramycin", "Amikacin",
@@ -28,7 +34,7 @@ def antibiotica_df():
     time_aki['window_end'] = time_aki['AKI_time']
     aki_ids = set(time_aki['subject_id'])
 
-    # Load inputevents (filtered on AKI IDs)
+    # Load inputevents (filtered on AKI subject IDs)
     dfs = []
     for path in input_paths:
         df = open_as_df(path, sepsis_path)
@@ -63,16 +69,21 @@ def antibiotica_df():
     valid_ids = set(mfa['subject_id'])
     ab_pivot = ab_pivot.reindex(index=list(valid_ids), fill_value=0)
 
-    # 👉 Belangrijk: subject_id als kolom maken
+    # Make a column of the subject_ids
     ab_pivot.reset_index(inplace=True)
 
     return ab_pivot
 
-# Run
+# To run the code
 #result = antibiotica_df(sepsis_path, input_paths, antibiotics)
 #print(result.head())
 
 def other_meds_df():
+    """
+    Returns a DataFrame with the other types of given meds per subject, closest to 12h before AKI onset.
+    Uses internal file paths.
+    """
+    # The paths
     sepsis_path = PATH_DATA / "sepsis_diagnose_time.csv"
     
     input_paths = [
@@ -86,7 +97,7 @@ def other_meds_df():
         "Ketorolac (Toradol)"
     ]
 
-    # === 1. Load AKI information ===
+    # Load AKI information
     aki_df = pd.read_csv(
         REPO_ROOT / "AKI_stage_output.csv",
         dtype={'subject_id': str},
@@ -98,14 +109,14 @@ def other_meds_df():
     time_aki['window_end']   = time_aki['AKI_time']
     aki_ids = set(time_aki['subject_id'])
 
-    # === 2. Load MFA subject_ids ===
+    # Load sepsis AKI subject_ids
     mfa_df = pd.read_csv(REPO_ROOT / "AKI_subjects.csv", dtype={'subject_id': str})
     mfa_ids = set(mfa_df['subject_id'])
 
     # Only keep IDs that appear in BOTH AKI and MFA
     final_ids = aki_ids.intersection(mfa_ids)
 
-    # === 3. Load inputevents (filtered on selected IDs) ===
+    # Load inputevents (filtered on selected IDs) 
     dfs = []
     for path in input_paths:
         df = open_as_df(path, sepsis_path)
@@ -117,41 +128,39 @@ def other_meds_df():
     sepsis_df['starttime'] = pd.to_datetime(sepsis_df['starttime'])
     sepsis_df['endtime']   = pd.to_datetime(sepsis_df['endtime'])
 
-    # === 4. Merge with AKI windows ===
+    # Merge with AKI windows
     df = sepsis_df.merge(time_aki, on='subject_id', how='left')
 
-    # === 5. Select 12h window before AKI ===
+    # Select 12h window before AKI 
     mask = (
         (df['endtime']   >= df['window_start']) &
-        (df['starttime'] <= df['window_end'])
-    )
+        (df['starttime'] <= df['window_end']))
     df_window = df.loc[mask]
 
-    # === 6. Filter selected medication ===
+    # Filter selected medication 
     df_window = df_window[df_window['item_label'].isin(med_list)]
 
-    # === 7. Sum mg/ml per medication ===
+    # Sum mg/ml per medication
     med_pivot = (
         df_window.groupby(['subject_id', 'item_label'])['totalamount']
         .sum()
-        .unstack()
-    )
+        .unstack())
 
     med_pivot = med_pivot.reindex(columns=med_list)
 
     # Include ALL subject_ids that should remain
     med_pivot = med_pivot.reindex(index=list(final_ids))
 
-    # 👉 FIX: subject_id moet kolom zijn i.p.v. index
+    # Make a column of the subject_ids instead of an index
     med_pivot.reset_index(inplace=True)
 
-    # === 8. Save ===
+    # Save the med_pivot matrix
     #out = REPO_ROOT / "other_meds_window_12h_sum.csv"
     #med_pivot.to_csv(out, index=False)
 
     return med_pivot
 
 
-
+# To run the code
 #other_result = other_meds_df(sepsis_path, input_paths, other_meds)
 #print(other_result.head())

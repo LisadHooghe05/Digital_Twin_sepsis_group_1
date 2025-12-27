@@ -50,7 +50,7 @@ print("DEBUG: result keys:", result.keys())
 for key, df in result.items():
     print(f"{key}: {len(df)} rows")
 
-#making lists
+# Making lists
 stages = []
 counts = []
 total_amount = 0
@@ -100,7 +100,7 @@ df_ids.to_csv("AKI_stages_subject.csv", index=False)
 stages_sorted_filtered = [stage for stage in desired_order if stage in df_ids["AKI_stage"].unique()]
 counts_sorted_filtered = [df_ids[df_ids["AKI_stage"] == stage].shape[0] for stage in stages_sorted_filtered]
 
-# Print de verdeling en totaal unieke subject_id's
+# Print the distribution and total number of unique subject_ids
 print(df_ids["AKI_stage"].value_counts())
 print("Aantal unieke subject_ID's:", df_ids["subject_id"].nunique())
 

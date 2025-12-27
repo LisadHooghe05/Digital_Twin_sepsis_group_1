@@ -33,7 +33,7 @@ def build_feature_matrix(repo_root=None):
         return matrix.join(df, how="left")
 
 
-    # AKI subjects
+    # Read AKI subjects
     aki_subjects = (
         pd.read_csv("AKI_subjects.csv", dtype={"subject_id": str})
         [["subject_id"]]
@@ -44,7 +44,7 @@ def build_feature_matrix(repo_root=None):
     print(f"Amount of sepsis patients with AKI: {len(aki_subjects)}")
 
 
-    # filter subjects on vitals
+    # Filter subjects on vitals
     from Matrix_data.combined_vitals import get_vitals_matrix_12h
     vitals_matrix = get_vitals_matrix_12h()
     vitals_matrix["subject_id"] = vitals_matrix["subject_id"].astype(str)
@@ -53,28 +53,28 @@ def build_feature_matrix(repo_root=None):
         aki_subjects.index.isin(valid_subjects)]
     print(f"Amount of patients after filtering on vitals: {len(aki_subjects)}")
 
-    # init matrix
+    # Init matrix
     matrix = aki_subjects.copy()
 
-    # adding gender to init matrix
+    # Adding gender to init matrix
     gender_df = pd.read_csv(PATH_DATA / "gender.csv", dtype={"subject_id": str})
     gender_df["gender"] = gender_df["gender"].map({"M": 0, "F": 1}).astype("Int8")
     matrix = add_df_to_matrix(matrix, gender_df)
 
-    # adding age
+    # Adding age
     from Matrix_data.age import get_age_12h_before_AKI
     age_df = get_age_12h_before_AKI()
     matrix = add_df_to_matrix(matrix, age_df)
 
-    # add vitals
+    # Add vitals
     matrix = add_df_to_matrix(matrix, vitals_matrix)
 
-    # add fluids
+    # Add fluids
     from Matrix_data.fluid import get_fluid_matrix_12h
     fluid_df = get_fluid_matrix_12h()
     matrix = add_df_to_matrix(matrix, fluid_df)
 
-    # add diuretics
+    # Add diuretics
     from Matrix_data.diuretica import get_diuretics_matrix_12h
     diuretics_df = get_diuretics_matrix_12h()
     matrix = add_df_to_matrix(matrix, diuretics_df)
@@ -83,52 +83,47 @@ def build_feature_matrix(repo_root=None):
     diuretics2_df = get_diuretics2_matrix_12h()
     matrix = add_df_to_matrix(matrix, diuretics2_df)
 
-    # add ACE / ARB
+    # Add ACE / ARB
     from Matrix_data.ECM_inhibitors import get_ACE_ARB_matrix_12h
     ace_arb_df = get_ACE_ARB_matrix_12h()
     matrix = add_df_to_matrix(matrix, ace_arb_df)
 
-    # add vasopressors
+    # Add vasopressors
     from Matrix_data.vasopressors import get_vasopressor_matrix_12h
     vasopressor_df = get_vasopressor_matrix_12h()
     matrix = add_df_to_matrix(matrix, vasopressor_df)
 
-    # add antibiotics
+    # Add antibiotics
     from Matrix_data.antibiotica_dataframe import antibiotica_df, other_meds_df
 
     matrix = add_df_to_matrix(matrix, antibiotica_df())
     matrix = add_df_to_matrix(matrix, other_meds_df())
 
 
-    # # # add ventilation and isotropics
+    # Add ventilation and isotropics
     from Matrix_data.ventilation_isotropics import build_patient_feature_matrix
     matrix=add_df_to_matrix(matrix, build_patient_feature_matrix())
 
-    # add presepsis conditions of patients
+    # Add presepsis conditions of patients
     from Matrix_data.presepsis_conditions import get_conditions_matrix_sepsis
     conditions_df = get_conditions_matrix_sepsis()
     matrix = add_df_to_matrix(matrix, conditions_df)
 
-
-    # add mortility
-    # # from Matrix_data.mortility_60days import create_AKI_60day_matrix
+    # Add mortility
     from Matrix_data.mortility_90days import create_AKI_90day_matrix
-
-    # matrix = add_df_to_matrix(matrix, create_AKI_60day_matrix())
     matrix = add_df_to_matrix(matrix, create_AKI_90day_matrix())
 
 
-    # ICU stay within 12 hours before AKI_time and AKI_time
+    # Add ICU stay within 12 hours before AKI_time and AKI_time
     from Matrix_data.ICU_stay_12hforakitime import compute_ICU_stays_window
     matrix = add_df_to_matrix(matrix, compute_ICU_stays_window())
 
-
-    # make a nice matrix that is usable
+    # Make a nice matrix that is usable
     matrix.reset_index(inplace=True)
 
+    # Save matrix
     #matrix.to_csv("matrix_overview.csv", index=False)
     #print(f"Amount subject_id's: {matrix['subject_id'].nunique()}")
-
 
     exclude = {"subject_id", "gender", "age_12h_before_AKI"}
     cols_to_check = [c for c in matrix.columns if c not in exclude]
