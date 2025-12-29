@@ -1,12 +1,13 @@
 import pandas as pd
 from pathlib import Path
 
-def heartrate():
+def build_heartrate_12h_before_aki():
     """
-    Returns a long-format dataframe:
-    subject_id | hours_before_AKI | label | valuenum
-    filtered to Heart Rate only
-    sorted chronologically (12h → 0h)
+    Builds heart rate vitals in the 12h window before AKI
+    and saves:
+    - vitals_chronological.csv (wide format)
+    - subject_ids.csv
+    Returns the wide vitals dataframe.
     """
 
     # Paths
@@ -43,38 +44,33 @@ def heartrate():
     # Filter out extreme values
     df12 = df12[df12['valuenum'].between(20, 300)]
 
-    # Sort chronologically
-    df12 = df12.sort_values(by=['subject_id', 'hours_before_AKI'], ascending=[True, False])
-    df12 = df12.round(2)
+    df12 = df12.sort_values(
+        ['subject_id', 'hours_before_AKI'],
+        ascending=[True, False]).round(2)
 
-    return df12
+    # Convert to wide format
+    out = df12.pivot_table(
+        index=['subject_id', 'hours_before_AKI'],
+        columns='label',
+        values='valuenum',
+        aggfunc='mean').reset_index()
 
+    out = out.sort_values(
+        ['subject_id', 'hours_before_AKI'],
+        ascending=[True, False])
 
-# Generate vitals dataframe
-df = heartrate()
+    # Paths for saving
+    REPO_ROOT = Path(__file__).resolve().parent.parent
+    PATH_CSV = REPO_ROOT / "csv_dashboard"
+    PATH_CSV.mkdir(exist_ok=True)
+    # Save outputs
+    vitals_path = PATH_CSV / "vitals_chronological.csv"
+    out.to_csv(vitals_path, index=False, decimal=',')
 
-# Convert to wide format
-out = df.pivot_table(
-    index=['subject_id', 'hours_before_AKI'],
-    columns='label',
-    values='valuenum',
-    aggfunc='mean'
-).reset_index()
+    subject_lookup = out[['subject_id']].drop_duplicates()
+    subject_lookup.to_csv(PATH_CSV / "subject_ids.csv", index=False)
 
-out = out.sort_values(['subject_id', 'hours_before_AKI'], ascending=[True, False])
+    # print(f"Saved {vitals_path}")
+    # print(f"Saved subject_ids.csv")
 
-# Paths for saving
-REPO_ROOT = Path(__file__).resolve().parent.parent
-PATH_CSV = REPO_ROOT / "csv_dashboard"
-PATH_CSV.mkdir(exist_ok=True)
-
-# Save vitals chronologically
-output_path = PATH_CSV / "vitals_chronological.csv"
-out.to_csv(output_path, index=False, decimal=',')
-
-# Read back using correct path
-vitals = pd.read_csv(output_path)
-
-# Save unique subject_ids
-subject_lookup = vitals[['subject_id']].drop_duplicates()
-subject_lookup.to_csv(PATH_CSV / "subject_ids.csv", index=False)
+    return out

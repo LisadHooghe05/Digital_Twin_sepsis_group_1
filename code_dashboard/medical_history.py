@@ -37,8 +37,8 @@ def save_conditions_per_subject():
     output_path.parent.mkdir(exist_ok=True)
     long_conditions.to_csv(output_path, index=False, decimal=',')
 
-    print(f"Long-format pre-conditions CSV saved to {output_path}")
+    # print(f"Long-format pre-conditions CSV saved to {output_path}")
     return long_conditions
 
-# Example usage:
-df_long = save_conditions_per_subject()
+# # Example usage:
+# df_long = save_conditions_per_subject()

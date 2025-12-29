@@ -19,13 +19,13 @@ def combine_all_to_one_csv_long_with_time():
     REPO_ROOT = Path.cwd()
     PATH_DATA = REPO_ROOT / "data"
 
-    print("Loading AKI info...")
+    # print("Loading AKI info...")
     aki_subjects, aki_times = load_aki_info(REPO_ROOT)
-    print(f"Found {len(aki_subjects)} AKI subjects")
+    # print(f"Found {len(aki_subjects)} AKI subjects")
 
-    print("Getting subject IDs from vitals...")
+    # print("Getting subject IDs from vitals...")
     subject_ids = get_subject_ids_from_vitals(PATH_DATA, aki_subjects)
-    print(f"{len(subject_ids)} subjects found in vitals")
+    # print(f"{len(subject_ids)} subjects found in vitals")
 
     def process_medications(df, med_column, amount_column=None):
         if df.empty:
@@ -43,7 +43,7 @@ def combine_all_to_one_csv_long_with_time():
     # --- Medications ---
 
     # Antibiotics
-    print("Processing antibiotics...")
+    # print("Processing antibiotics...")
     ab_paths = [PATH_DATA / f"inputevents_sepsis{i}.csv" for i in [1,2,3]]
     antibiotics = [
         "Vancomycin", "Teicoplanin", "Co-trimoxazole", "Sulfadiazine",
@@ -59,7 +59,7 @@ def combine_all_to_one_csv_long_with_time():
     df_ab_long = pd.concat(ab_dfs, ignore_index=True)
 
     # Diuretics
-    print("Processing diuretics...")
+    # print("Processing diuretics...")
     diu_paths = [PATH_DATA / f"inputevents_sepsis{i}.csv" for i in [1,2,3]]
     diuretics = [
         'Bumetanide (Bumex)', 'Furosemide (Lasix)', 'Furosemide (Lasix) 250/50',
@@ -73,7 +73,7 @@ def combine_all_to_one_csv_long_with_time():
     df_diu_long = pd.concat(diu_dfs, ignore_index=True)
 
     # ACE/ARB
-    print("Processing ACE/ARB...")
+    # print("Processing ACE/ARB...")
     ace_arb_df = pd.read_csv(PATH_DATA / "ACE_ARB.csv", dtype={'subject_id': str})
     ace_drugs = ['Captopril', 'Enalapril Maleate', 'Enalaprilat', 'Lisinopril', 'Quinapril']
     arb_drugs = ['Losartan Potassium', 'Valsartan']
@@ -81,7 +81,7 @@ def combine_all_to_one_csv_long_with_time():
     df_ace_arb_long = process_medications(ace_arb_df, 'drug')
 
     # Vasopressors
-    print("Processing vasopressors...")
+    # print("Processing vasopressors...")
     df_vaso = pd.read_csv(PATH_DATA / "VASO.csv", dtype={'subject_id': str, 'stay_id': str})
     df_events = pd.read_csv(PATH_DATA / "vasopressors.csv", dtype={'stay_id': str})
     df_events = df_events.merge(df_vaso[['stay_id', 'subject_id']], on='stay_id', how='left')
@@ -90,7 +90,7 @@ def combine_all_to_one_csv_long_with_time():
     df_vaso_long = process_medications(df_events, 'drug', 'amount')
 
     # --- Combine ---
-    print("Combining all medications...")
+    # print("Combining all medications...")
     df_all_long = pd.concat([df_ab_long, df_diu_long, df_ace_arb_long, df_vaso_long], ignore_index=True)
     df_all_long = df_all_long.sort_values(['subject_id', 'starttime'])
 
@@ -98,14 +98,12 @@ def combine_all_to_one_csv_long_with_time():
     df_all_long = df_all_long.merge(
         aki_times[['subject_id', 'AKI_time']],
         on='subject_id',
-        how='left'
-    )
+        how='left')
 
     # Filter 12h window before AKI
     df_all_long = df_all_long[
         (df_all_long['starttime'] >= df_all_long['AKI_time'] - pd.Timedelta(hours=12)) &
-        (df_all_long['starttime'] <= df_all_long['AKI_time'])
-    ]
+        (df_all_long['starttime'] <= df_all_long['AKI_time'])]
 
     # Drop exact duplicates
     df_all_long = df_all_long.drop_duplicates(subset=['subject_id', 'medication', 'starttime', 'AKI_time'])
@@ -121,10 +119,10 @@ def combine_all_to_one_csv_long_with_time():
     df_binary['amount'] = 1  # binary = 1
     binary_path = REPO_ROOT / "csv_dashboard" / "meds_12h_before_AKI_binary.csv"
     df_binary.to_csv(binary_path, index=False, decimal=',')
+    return df_binary,df_amounts
+    # print(f"Amounts file saved to {amounts_path}")
+    # print(f"Binary file saved to {binary_path}")
 
-    print(f"Amounts file saved to {amounts_path}")
-    print(f"Binary file saved to {binary_path}")
 
-
-if __name__ == "__main__":
-    combine_all_to_one_csv_long_with_time()
+# if __name__ == "__main__":
+#     combine_all_to_one_csv_long_with_time()

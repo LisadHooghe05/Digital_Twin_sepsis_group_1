@@ -6,6 +6,10 @@ from Tool_1.determining_baseline import peak_creat, compute_baseline
 from Tool_1.determining_AKI import AKI_detection
 from matrix_dataframe import build_feature_matrix
 from Matrix_data.fill_final_matrix import fill_matrix_with_zeros
+from code_dashboard.creatininevalues import build_creatinine_window_12h_aki
+from code_dashboard.heart_rate import build_heartrate_12h_before_aki
+from code_dashboard.medical_history import save_conditions_per_subject
+from code_dashboard.medication import combine_all_to_one_csv_long_with_time
 
 # Data that is used
 REPO_ROOT   = Path(__file__).resolve().parent
@@ -34,8 +38,19 @@ def main():
     print("Medians used for vitals:")
     print(medians_df)
 
-    # You can still use the final matrix
+    # The final matrix
     final_matrix.to_csv("matrix_filled.csv", index=False)
+
+    # Making dashboard CSVs and save them in the folder csv_dashboard
+    print("Generating creatinine CSV...")
+    df_creatinine = build_creatinine_window_12h_aki()
+    print("Generating heart rate CSV...")
+    df_heartrate = build_heartrate_12h_before_aki()
+    print("Generating medical history CSV...")
+    df_conditions = save_conditions_per_subject()
+    print("Generating medication CSVs...")
+    df_med_binary, df_med_amounts = combine_all_to_one_csv_long_with_time()
+    print("All dashboard CSVs generated successfully!")
 
 
 # Zorg dat dit script alleen draait als het direct wordt uitgevoerd
