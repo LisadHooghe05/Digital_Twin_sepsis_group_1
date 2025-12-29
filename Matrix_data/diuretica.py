@@ -25,21 +25,6 @@ def get_diuretics_matrix_12h():
     # Loading sepsis data
     sepsis_data = pd.concat([open_as_df(p, sepsis_path) for p in input_paths], ignore_index=True)
 
-    def get_column_index(df, column_name):
-        """
-        Returns the position of a wanted column in the datafrome
-        if the column does not exist, raises a ValueError
-        """
-        try: 
-            return df.columns.get_loc(column_name)
-        except KeyError:
-            raise ValueError(f"Column'{column_name}' not found in Dataframe")
-
-    df = sepsis_data 
-    col_name = "item_label" # -> change this to get another column for example item_category for fluids/intake
-    col_index = get_column_index(df,col_name)
-    #print(f"Column'{col_name}' is at index '{col_index}'")
-
     AKI_df = pd.read_csv("AKI_subjects.csv") # file with the AKI stages coupled to the subject_IDs
     AKI_onset_df=pd.read_csv("AKI_stage_output.csv")
     
@@ -87,6 +72,11 @@ def get_diuretics_matrix_12h():
         values='amount',
         aggfunc='sum').reset_index()
 
+    # Fill NaN's with 0
+    diuretics_matrix_12h = diuretics_matrix_12h.fillna(0)
+    # Delete colums who do not have any value
+    diuretics_matrix_12h = diuretics_matrix_12h.loc[:, (diuretics_matrix_12h != 0).any(axis=0)]
     diuretics_matrix_12h = diuretics_matrix_12h.round(2)
 
     return diuretics_matrix_12h
+

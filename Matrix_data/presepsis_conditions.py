@@ -16,7 +16,6 @@ def get_conditions_matrix_sepsis():
     PATH_DATA = REPO_ROOT / "data"
 
     conditions_path = PATH_DATA / "sepsis_preex_conditions.csv"
-    sepsis_path = PATH_DATA / "sepsis_diagnose_time.csv"
     
     # Load AKI subjects
     aki_subjects = pd.read_csv("AKI_subjects.csv")
@@ -47,10 +46,7 @@ def get_conditions_matrix_sepsis():
     conditions_matrix = pd.merge(aki_subjects[['subject_id']], conditions_matrix, 
                                  on='subject_id', how='left')
     # # Fill NaN values with 0
-    # conditions_matrix = conditions_matrix.fillna(0)
-
-    # Convert non-NaN values to 1, NaN to 0
-    conditions_matrix = conditions_matrix.eq(conditions_matrix).astype(int) 
+    conditions_matrix = conditions_matrix.fillna(0)
 
     # Save to CSV
     # conditions_matrix.to_csv("conditions_matrix.csv", index=False)
@@ -60,6 +56,4 @@ def get_conditions_matrix_sepsis():
 
     return conditions_matrix
 
-# # Run the code
-# conditions = get_conditions_matrix_sepsis()
-# print(conditions)
+

@@ -21,31 +21,6 @@ def get_vitals_matrix_12h():
     aki_times_file = "AKI_stage_output.csv"
     sepsis_df = pd.read_csv(sepsis_file, dtype={'stay_id': str, 'subject_id': str})
 
-#     # Function to load and enrich a vitals file
-#     def load_vitals_with_subject_id(file_path):
-#             df = pd.read_csv(file_path, dtype={'stay_id': str})
-#             df = df.merge(sepsis_df[['stay_id', 'subject_id']], on='stay_id', how='left')
-#             return df
-
-#     # Load all 3 vitals files
-#     v1 = load_vitals_with_subject_id(PATH_DATA/"vitals1.csv")
-#     v2 = load_vitals_with_subject_id(PATH_DATA/"vitals2.csv")
-#     v3 = load_vitals_with_subject_id(PATH_DATA/"vitals3.csv")
-
-#     # Count unique subject_id’s per file
-#     u1 = v1['subject_id'].nunique()
-#     u2 = v2['subject_id'].nunique()
-#     u3 = v3['subject_id'].nunique()
-
-#     # Combined unique subject_id’s across all files
-#     combined_unique = pd.concat([v1['subject_id'], v2['subject_id'], v3['subject_id']]).nunique()
-
-#     # Print results
-#     print(f"Unieke subject_id's in vitals1.csv: {u1}")
-#     print(f"Unieke subject_id's in vitals2.csv: {u2}")
-#     print(f"Unieke subject_id's in vitals3.csv: {u3}")
-#     print(f"Totaal unieke subject_id's over alle 3 bestanden: {combined_unique}")
-
     # Read sepsis mapping and AKI subjects
     aki_stage_df = pd.read_csv(aki_file, dtype={'subject_id': str})
     aki_subjects = set(aki_stage_df['subject_id'])
@@ -53,11 +28,13 @@ def get_vitals_matrix_12h():
     # Read AKI onset times
     aki_times_df = pd.read_csv(aki_times_file, dtype={'subject_id': str})
     aki_times_df['AKI_time'] = pd.to_datetime(aki_times_df['AKI_time'], errors='coerce')
-    aantal_zonder_AKI_time = aki_times_df['AKI_time'].isna().sum()
+    # aantal_zonder_AKI_time = aki_times_df['AKI_time'].isna().sum()
     # print("Aantal subject_id’s zonder AKI_time:", aantal_zonder_AKI_time)
 
     # Add all vital data
-    vitals_list = [pd.read_csv(vf, dtype={'stay_id': str}) for vf in vitals_files]
+    vitals_list = [
+    pd.read_csv(vf, dtype={'stay_id': str}, encoding='utf-8', errors='replace') 
+    for vf in vitals_files]
     vitals_df = pd.concat(vitals_list, ignore_index=True)
 
     # Add subject id's couple them to the stay_id

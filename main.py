@@ -13,7 +13,7 @@ PATH_DATA   = REPO_ROOT / "data"
 SEPSIS_CSV  = "sepsis_diagnose_time.csv"
 CREAT_CSV   = "creatinine_over_time.csv"
 OUTPUT_CSV = "AKI_stage_output.csv"
-OUTPUT_CSV2 ="AKI_subjects.csv"
+OUTPUT_CSV2 = "AKI_subjects.csv"
 
 def main():
     AKI_df = AKI_detection(SEPSIS_CSV,CREAT_CSV)

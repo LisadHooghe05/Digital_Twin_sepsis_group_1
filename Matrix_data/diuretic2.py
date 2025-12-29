@@ -42,17 +42,34 @@ def get_diuretics2_matrix_12h():
     # Keep only drugs within 12h before AKI onset
     diu_df['hours_before_AKI'] = (diu_df['AKI_time'] - diu_df['stoptime']).dt.total_seconds() / 3600
     diu_df_12h = diu_df[(diu_df['hours_before_AKI'] >= 0) & (diu_df['hours_before_AKI'] <= 12)].copy()
+    
+    diu_df_12h['drug_clean'] = (
+    diu_df_12h['drug']
+    .astype(str)
+    .str.strip()
+    .str.lower())
 
+    name_mapping = {
+    'mannitol 20 %': 'Mannitol 20%',
+    'mannitol 20%': 'Mannitol 20%',
+    'furosemide': 'Furosemide',
+    'metolazone': 'Metolazone'}
+
+    # # Use mapping so you do not have columns with the same name
+    # diu_df_12h['drug'] = diu_df_12h['drug'].replace(name_mapping)
+    diu_df_12h['drug_std'] = (
+    diu_df_12h['drug_clean']
+    .map(name_mapping)
+    .fillna(diu_df_12h['drug']))   #keep original name if there is no mapping
+    
     # Convert to 0/1 matrix: subjects x diuretic types
     diu2_matrix_12h = diu_df_12h.pivot_table(
         index='subject_id',
-        columns='drug',
+        columns='drug_std',
         values='stoptime',
         aggfunc='count')
 
     # Convert counts >0 to 1
     diu2_matrix_12h = (diu2_matrix_12h > 0).astype(int).reset_index()
-    diu2_matrix_12h = diu2_matrix_12h.round(2)
 
     return diu2_matrix_12h
-

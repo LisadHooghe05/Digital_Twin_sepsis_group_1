@@ -17,9 +17,9 @@ def fill_matrix_with_zeros():
     final_matrix = pd.read_csv('matrix_overview_without_all_NaN.csv')
     final_matrix = final_matrix.replace(r"^\s*$", np.nan, regex=True)
 
-    #print("BEFORE drop:", final_matrix.shape)
+    # print("BEFORE drop:", final_matrix.shape)
 
-    # We take out the temperature
+    # Do not use the column temperature
     final_matrix.drop(columns=['Temperature'], inplace=True)
 
     vitals = ['age_12h_before_AKI', 'Diastolic Blood Pressure','Heart Rate',
@@ -32,16 +32,13 @@ def fill_matrix_with_zeros():
         if column not in vitals:
             other_features.append(column)
     
-    # Computes the medians for the vitals
     for vital in vitals:
         median = final_matrix[vital].median()
         medians_used[vital] = median
         final_matrix[vital] = final_matrix[vital].fillna(median)
     
     for feature in other_features:
-        # final_matrix[feature] = final_matrix[feature].fillna(0)
-        final_matrix[feature] = final_matrix[feature].eq(final_matrix[feature]).astype(int)
-
+        final_matrix[feature] = final_matrix[feature].fillna(0)
 
     missing_values = pd.DataFrame({
         'feature': final_matrix.columns,
@@ -51,9 +48,9 @@ def fill_matrix_with_zeros():
         "feature": list(medians_used.keys()),
         "median": list(medians_used.values())})
 
-    #print("AFTER drop:", final_matrix.shape)
+    # print("AFTER drop:", final_matrix.shape)
 
-    #final_matrix.to_csv('matrix_final_final.csv', index=False)
+    # final_matrix.to_csv('matrix_final_final.csv', index=False)
 
     return missing_values, medians_df,final_matrix
 

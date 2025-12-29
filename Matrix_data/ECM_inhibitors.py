@@ -59,17 +59,9 @@ def get_ACE_ARB_matrix_12h():
 
     # Initialize matrix
     subject_ids = sorted(drug_df_12h['subject_id'].unique())
-    columns_order = ['subject_id', 'ACE'] + ACE_drugs + ['ARB'] + ARB_drugs
+    columns_order = ['subject_id'] + ACE_drugs + ARB_drugs
     matrix = pd.DataFrame(0, index=range(len(subject_ids)), columns=columns_order)
     matrix['subject_id'] = subject_ids
-
-    # Fill 1/0 for ACE and ARB overall using to map ACE and ARB and Nan for the types where there were no measurements
-    ace_series = drug_df_12h.groupby('subject_id')['drug_class'].apply(lambda x: int('ACE' in x.values))
-    arb_series = drug_df_12h.groupby('subject_id')['drug_class'].apply(lambda x: int('ARB' in x.values))
-
-    # Fill the ACE or ARB with 1 if the subject id got something of the ace_series or the arb_series
-    matrix['ACE'] = matrix['subject_id'].map(ace_series).eq(1).astype(int)
-    matrix['ARB'] = matrix['subject_id'].map(arb_series).eq(1).astype(int)
 
     # Fill 1/0 for specific drugs
     for drug in ACE_drugs + ARB_drugs:

@@ -15,7 +15,7 @@ from joblib import dump, load
 
 # Set root
 REPO_ROOT = Path(__file__).resolve().parent
-PATH_DATA = REPO_ROOT / "matrix_final_final.csv"
+PATH_DATA = REPO_ROOT / "matrix_filled.csv"
 
 def cluster_analysis(file_path, variance_thresh=0.01, pca_variance=0.90, 
                      min_cluster_size=50, hdb_prob_thresh=0.848, save_models=True):
