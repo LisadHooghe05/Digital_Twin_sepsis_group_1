@@ -33,7 +33,7 @@ def get_vitals_matrix_12h():
 
     # Add all vital data
     vitals_list = [
-    pd.read_csv(vf, dtype={'stay_id': str}, encoding='utf-8', errors='replace') 
+    pd.read_csv(vf, dtype={'stay_id': str}) 
     for vf in vitals_files]
     vitals_df = pd.concat(vitals_list, ignore_index=True)
 
