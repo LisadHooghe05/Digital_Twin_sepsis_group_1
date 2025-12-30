@@ -10,6 +10,8 @@ from code_dashboard.creatininevalues import build_creatinine_window_12h_aki
 from code_dashboard.heart_rate import build_heartrate_12h_before_aki
 from code_dashboard.medical_history import save_conditions_per_subject
 from code_dashboard.medication import combine_all_to_one_csv_long_with_time
+from unsupervised_clustering import cluster_analysis
+
 
 # Data that is used
 REPO_ROOT   = Path(__file__).resolve().parent
@@ -39,7 +41,8 @@ def main():
     print(medians_df)
 
     # The final matrix
-    final_matrix.to_csv("matrix_filled.csv", index=False)
+    matrix_path = REPO_ROOT / "matrix_filled.csv"
+    final_matrix.to_csv(matrix_path, index=False)
 
     # Making dashboard CSVs and save them in the folder csv_dashboard
     print("Generating creatinine CSV...")
@@ -51,6 +54,16 @@ def main():
     print("Generating medication CSVs...")
     df_med_binary, df_med_amounts = combine_all_to_one_csv_long_with_time()
     print("All dashboard CSVs generated successfully!")
+
+    
+    print("Running unsupervised clustering...")
+    df_core, bic_scores, sil, dbi, kw_df, mortality_rates, vt, scaler, pca, best_gmm = cluster_analysis(
+        REPO_ROOT / "matrix_filled.csv"
+    )
+    print("Unsupervised clustering done.")
+    print(f"Core points: {len(df_core)} | silhouette: {sil} | DBI: {dbi}")
+    print("Saved Power BI CSVs to csv_dashboard/")
+
 
 
 # Zorg dat dit script alleen draait als het direct wordt uitgevoerd

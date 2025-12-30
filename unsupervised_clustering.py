@@ -80,6 +80,19 @@ def cluster_analysis(file_path, variance_thresh=0.01, pca_variance=0.90,
     best_gmm = models[np.argmin(bic_scores)]
     
     labels = best_gmm.predict(X_core)
+
+    # --- Maak output voor ALLE patiënten (Power BI) ---
+    all_labels = best_gmm.predict(X_pca)
+    all_probs  = best_gmm.predict_proba(X_pca).max(axis=1)
+
+    df_all = df.copy()
+    df_all["cluster"] = all_labels
+    df_all["cluster_prob"] = all_probs
+    df_all["is_core"] = core_mask
+    df_all["HDBSCAN_label"] = hdb_labels
+    df_all["HDBSCAN_proba"] = max_proba
+
+
     df_core['cluster'] = labels
     df_core['HDBSCAN_proba'] = max_proba[core_mask]
     
@@ -113,18 +126,35 @@ def cluster_analysis(file_path, variance_thresh=0.01, pca_variance=0.90,
     
     # Save models for later new patient assignment
     if save_models:
-        dump(vt, REPO_ROOT / "variance_threshold_model.joblib")
+        dump(vt, REPO_ROOT / "vt_model.joblib")
         dump(scaler, REPO_ROOT / "scaler_model.joblib")
         dump(pca, REPO_ROOT / "pca_model.joblib")
         dump(best_gmm, REPO_ROOT / "gmm_model.joblib")
-        dump(X_core, "X_core_pca.joblib")      
-        dump(labels, "labels_core.joblib") 
+        dump(X_core, REPO_ROOT /  "X_core_pca.joblib")      
+        dump(labels, REPO_ROOT / "labels_core.joblib") 
+
+    out_dir = REPO_ROOT / "csv_dashboard"
+    out_dir.mkdir(exist_ok=True)
+
+    df_all.to_csv(out_dir / "patients_with_clusters.csv", index=False)
+
+    mortality_table = (
+        df_all.groupby("cluster")["died_within_90d_after_AKI"]
+        .mean()
+        .reset_index()
+        .rename(columns={"died_within_90d_after_AKI": "mortality_rate"})
+    )
+    mortality_table.to_csv(out_dir / "cluster_mortality.csv", index=False)
+
+    kw_df.to_csv(out_dir / "cluster_feature_importance.csv", index=False)
 
     
     return df_core, bic_scores, sil, dbi, kw_df, mortality_rates, vt, scaler, pca, best_gmm
 
-df_core, bic_scores, sil, dbi, kw_df, mortality_rates, vt, scaler, pca, best_gmm = cluster_analysis(PATH_DATA)
-print(df_core.head(10))
+
+if __name__ == "__main__":
+    df_core, bic_scores, sil, dbi, kw_df, mortality_rates, vt, scaler, pca, best_gmm = cluster_analysis(PATH_DATA)
+    print(df_core.head(10))
 
 def comparing_clusters(cluster_df, significance_df):
     """
@@ -170,12 +200,12 @@ def assign_patient(patient_feature_df):
     patient_df: single-row dataframe with the same features used for clustering
     """
     # Load clustering modelling
-    vt = load('vt_model.joblib')
-    scaler = load('scaler_model.joblib')
-    pca = load('pca_model.joblib')
-    gmm = load('gmm_model.joblib')
-    X_core = load('X_core_pca.joblib')
-    labels = load('labels_core.joblib')
+    vt = load(REPO_ROOT / 'vt_model.joblib')
+    scaler = load(REPO_ROOT / 'scaler_model.joblib')
+    pca = load(REPO_ROOT / 'pca_model.joblib')
+    gmm = load(REPO_ROOT / 'gmm_model.joblib')
+    X_core = load(REPO_ROOT / 'X_core_pca.joblib')
+    labels = load(REPO_ROOT / 'labels_core.joblib')
     
     # Perform clustering preprocessing
     X_var = vt.transform(patient_feature_df)
