@@ -6,14 +6,7 @@ from unsupervised_clustering import cluster_analysis
 REPO_ROOT = Path(__file__).resolve().parent
 file_path = REPO_ROOT / "matrix_filled.csv"
 
-# Run clustering
-#df_core, bic_scores, sil, dbi, kw_df, mortality_rates, vt, scaler, pca, best_gmm = cluster_analysis(
-#    file_path,
-#    variance_thresh=0.01,
-#    pca_variance=0.90,
-#    min_cluster_size=50,
-#   hdb_prob_thresh=0.848
-#)
+
 
 def dataframe_dashboard(df_core):
     """
@@ -39,6 +32,16 @@ def dataframe_dashboard(df_core):
 
     return df_dashboard
 
-# Create dashboard dataframe
-#df_dashboard = dataframe_dashboard(df_core)
-#print(df_dashboard.head(10))
+if __name__ == "__main__":
+    #Run clustering
+    df_core, bic_scores, sil, dbi, kw_df, mortality_rates, vt, scaler, pca, best_gmm = cluster_analysis(
+        file_path,
+        variance_thresh=0.01,
+        pca_variance=0.90,
+        min_cluster_size=50,
+    hdb_prob_thresh=0.848
+    )
+
+    # Create dashboard dataframe
+    #df_dashboard = dataframe_dashboard(df_core)
+    #print(df_dashboard.head(10))
