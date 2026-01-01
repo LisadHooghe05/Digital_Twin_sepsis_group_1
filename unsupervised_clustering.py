@@ -15,7 +15,7 @@ from joblib import dump, load
 
 # Set root
 REPO_ROOT = Path(__file__).resolve().parent
-PATH_DATA = REPO_ROOT / "matrix_final_final.csv"
+PATH_DATA = REPO_ROOT / "matrix_filled.csv"
 
 def cluster_analysis(file_path, variance_thresh=0.01, pca_variance=0.90, 
                      min_cluster_size=50, hdb_prob_thresh=0.848, save_models=True):
@@ -141,7 +141,7 @@ def comparing_clusters(cluster_df, significance_df):
     Analyze important features using means, FDR correction, and Dunn test for pairwise clusters.
     """
     important_features = ["Oxygen Saturation", "Furosemide", "Vancomycin",
-                          "Norepinephrine_y", "Heart Failure"]
+                          "Norepinephrine", "Heart Failure"]
     
     mean = cluster_df.groupby("cluster")[important_features].mean(numeric_only=True)
 
@@ -211,7 +211,7 @@ def assign_patient(patient_feature_df):
 
 if __name__ == "__main__":
     df_core, bic_scores, sil, dbi, kw_df, mortality_rates, vt, scaler, pca, best_gmm = cluster_analysis(PATH_DATA)
-    print(f" bic: {bic_scores}, dbi: {dbi}, sil: {sil}")
+    print(f" bic: {bic_scores}, dbi: {dbi}, sil: {sil}, mortality rate:{mortality_rates}")
 
     mean, significance_df, dunn_output = comparing_clusters(df_core, kw_df)
     print(dunn_output)
