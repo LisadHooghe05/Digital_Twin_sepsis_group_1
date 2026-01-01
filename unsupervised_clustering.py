@@ -15,7 +15,7 @@ from joblib import dump, load
 
 # Set root
 REPO_ROOT = Path(__file__).resolve().parent
-PATH_DATA = REPO_ROOT / "matrix_filled.csv"
+PATH_DATA = REPO_ROOT / "matrix_final_final.csv"
 
 def cluster_analysis(file_path, variance_thresh=0.01, pca_variance=0.90, 
                      min_cluster_size=50, hdb_prob_thresh=0.848, save_models=True):
@@ -81,30 +81,24 @@ def cluster_analysis(file_path, variance_thresh=0.01, pca_variance=0.90,
     
     labels = best_gmm.predict(X_core)
 
-    # --- Maak output voor ALLE patiënten (Power BI) ---
-    all_labels = best_gmm.predict(X_pca)
-    all_probs  = best_gmm.predict_proba(X_pca).max(axis=1)
-
-    df_all = df.copy()
-    df_all["cluster"] = all_labels
-    df_all["cluster_prob"] = all_probs
-    df_all["is_core"] = core_mask
-    df_all["HDBSCAN_label"] = hdb_labels
-    df_all["HDBSCAN_proba"] = max_proba
+    core_probs = best_gmm.predict_proba(X_core).max(axis=1)
+    df_core['cluster_prob'] = core_probs
 
 
     df_core['cluster'] = labels
     df_core['HDBSCAN_proba'] = max_proba[core_mask]
-    
     # Silhouette and Davies-Bouldin
     if len(np.unique(labels)) > 1:
         sil = silhouette_score(X_core, labels)
         sil_per_patient = silhouette_samples(X_core, labels)
+
         df_core['Silhouette_score'] = (sil_per_patient + 1) / 2  # rescale 0-1
+
         dbi = davies_bouldin_score(X_core, labels)
     else:
         sil = dbi = np.nan
         df_core['Silhouette_score'] = np.nan
+
     
     # Mortality rates per cluster
     mortality_rates = df_core.groupby('cluster')['died_within_90d_after_AKI'].mean()
@@ -136,25 +130,11 @@ def cluster_analysis(file_path, variance_thresh=0.01, pca_variance=0.90,
     out_dir = REPO_ROOT / "csv_dashboard"
     out_dir.mkdir(exist_ok=True)
 
-    df_all.to_csv(out_dir / "patients_with_clusters.csv", index=False)
-
-    mortality_table = (
-        df_all.groupby("cluster")["died_within_90d_after_AKI"]
-        .mean()
-        .reset_index()
-        .rename(columns={"died_within_90d_after_AKI": "mortality_rate"})
-    )
-    mortality_table.to_csv(out_dir / "cluster_mortality.csv", index=False)
-
     kw_df.to_csv(out_dir / "cluster_feature_importance.csv", index=False)
 
     
     return df_core, bic_scores, sil, dbi, kw_df, mortality_rates, vt, scaler, pca, best_gmm
 
-
-if __name__ == "__main__":
-    df_core, bic_scores, sil, dbi, kw_df, mortality_rates, vt, scaler, pca, best_gmm = cluster_analysis(PATH_DATA)
-    print(df_core.head(10))
 
 def comparing_clusters(cluster_df, significance_df):
     """
@@ -192,6 +172,7 @@ def comparing_clusters(cluster_df, significance_df):
     return mean, significance_df, dunn_output
 
 
+
 def assign_patient(patient_feature_df):
     """
     Assign a new patient to an existing cluster. (Process patient exactly the same way as 
@@ -226,3 +207,11 @@ def assign_patient(patient_feature_df):
     sil_score = (sil_values[-1] + 1) / 2  # rescale 0-1
     
     return cluster_label, cluster_prob, sil_score
+
+
+if __name__ == "__main__":
+    df_core, bic_scores, sil, dbi, kw_df, mortality_rates, vt, scaler, pca, best_gmm = cluster_analysis(PATH_DATA)
+    print(f" bic: {bic_scores}, dbi: {dbi}, sil: {sil}")
+
+    mean, significance_df, dunn_output = comparing_clusters(df_core, kw_df)
+    print(dunn_output)
