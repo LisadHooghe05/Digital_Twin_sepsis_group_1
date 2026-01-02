@@ -65,7 +65,7 @@ def main():
     print(f"Core points: {len(df_core)} | silhouette: {sil} | DBI: {dbi}")
     print("Saved Power BI CSVs to csv_dashboard")
 
-    df_dashboard = dataframe_dashboard(df_core)
+    dataframe_dashboard(df_core)
     print("df_dashboard saved to csv_dashboard")
 
 
