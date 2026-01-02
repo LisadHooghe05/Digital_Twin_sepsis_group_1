@@ -111,10 +111,12 @@ def cluster_analysis(file_path, variance_thresh=0.01, pca_variance=0.90,
     
     # Mortality rates per cluster
     mortality_rates = df_core.groupby('cluster')['died_within_90d_after_AKI'].mean()
+    # ICU stay per cluster
+    icu_stay_rates = (df_core.loc[df_core['ICU_stay_12hforakitime'] != 0].groupby('cluster')['ICU_stay_12hforakitime'].mean())
     
     # Kruskal-Wallis and eta-squared feature importance
     MIN_CLUSTER_SIZE = 70
-    eta_sq_threshold = 0.06
+    eta_sq_threshold = 0.01
     rows = []
 
     # Identify valid clusters
@@ -145,7 +147,7 @@ def cluster_analysis(file_path, variance_thresh=0.01, pca_variance=0.90,
         if eta_sq < eta_sq_threshold:
             continue
         rows.append({"feature": col, "H": stat, "p": p,
-                     "eta_sq": eta_sq, "n_clusters": k})
+                     "eta_sq": eta_sq})
     
     kw_df = pd.DataFrame(rows)
     
@@ -162,9 +164,8 @@ def cluster_analysis(file_path, variance_thresh=0.01, pca_variance=0.90,
     out_dir.mkdir(exist_ok=True)
 
     kw_df.to_csv(out_dir / "cluster_feature_importance.csv", index=False)
-
-    
-    return df_core, bic_scores, sil, dbi, kw_df, cluster_distribution, mortality_rates, vt, scaler, pca, best_gmm
+  
+    return df_core, bic_scores, sil, dbi, kw_df, cluster_distribution, mortality_rates, icu_stay_rates, vt, scaler, pca, best_gmm
 
 
 def comparing_clusters(cluster_df, significance_df):
@@ -240,10 +241,11 @@ def assign_patient(patient_feature_df):
 
 
 if __name__ == "__main__":
-    df_core, bic_scores, sil, dbi, kw_df, cluster_distribution, mortality_rates, vt, scaler, pca, best_gmm = cluster_analysis(PATH_DATA,variance_thresh=0.01, pca_variance=0.90, 
+    df_core, bic_scores, sil, dbi, kw_df, cluster_distribution, mortality_rates, icu_stay_rates, vt, scaler, pca, best_gmm = cluster_analysis(PATH_DATA,variance_thresh=0.01, pca_variance=0.90, 
                      min_cluster_size=50, hdb_prob_thresh=0.835, save_models=True)
     print(f" bic: {bic_scores}, dbi: {dbi}, sil: {sil}, mortality rate:{mortality_rates}")
     print(kw_df)
+    print(icu_stay_rates)
     
     mean, significance_df, dunn_output = comparing_clusters(df_core, kw_df)
     #print(dunn_output)

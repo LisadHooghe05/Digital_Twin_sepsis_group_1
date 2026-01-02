@@ -58,7 +58,7 @@ def main():
 
     
     print("Running unsupervised clustering...")
-    df_core, bic_scores, sil, dbi, kw_df, cluster_distribution, mortality_rates, vt, scaler, pca, best_gmm = cluster_analysis(
+    df_core, bic_scores, sil, dbi, kw_df, cluster_distribution, mortality_rates, icu_stay_rates, vt, scaler, pca, best_gmm = cluster_analysis(
         REPO_ROOT / "matrix_filled.csv"
     )
     print("Unsupervised clustering done.")
