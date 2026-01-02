@@ -1,6 +1,7 @@
 
 import pandas as pd
 import hdbscan
+from hdbscan.prediction import approximate_predict
 from pathlib import Path
 from sklearn.preprocessing import RobustScaler
 from sklearn.feature_selection import VarianceThreshold
@@ -62,12 +63,11 @@ def cluster_analysis(file_path, variance_thresh=0.01, pca_variance=0.90,
     core_mask = (hdb_labels >= 0) & (max_proba >= hdb_prob_thresh)
     X_core = X_pca[core_mask]
     df_core = df[core_mask].copy()
-    print(
-    f"HDBSCAN: "
+    print(f"HDBSCAN: "
     f"{(hdb_labels >= 0).sum()} non-noise, "
     f"{(max_proba >= hdb_prob_thresh).sum()} above prob thresh, "
-    f"{core_mask.sum()} core points"
-)
+    f"{core_mask.sum()} core points")
+    
     # GMM clustering
     bic_scores, models = [], []
     for k in range(3, 8):
@@ -167,7 +167,8 @@ def cluster_analysis(file_path, variance_thresh=0.01, pca_variance=0.90,
         dump(pca, REPO_ROOT / "pca_model.joblib")
         dump(best_gmm, REPO_ROOT / "gmm_model.joblib")
         dump(X_core, REPO_ROOT /  "X_core_pca.joblib")      
-        dump(labels, REPO_ROOT / "labels_core.joblib") 
+        dump(labels, REPO_ROOT / "labels_core.joblib")
+        dump(clusterer, REPO_ROOT / "hdbscan_model.joblib")
 
     out_dir = REPO_ROOT / "csv_dashboard"
     out_dir.mkdir(exist_ok=True)
@@ -219,6 +220,7 @@ def assign_patient(patient_feature_df, df_core):
     overall clustering)
     
     patient_df: single-row dataframe with the same features used for clustering
+    df_core: dataframe returned from cluster_analysis
     """
     # Force vital input or median from df_core
     vitals = {'age_12h_before_AKI': 68,
@@ -247,6 +249,7 @@ def assign_patient(patient_feature_df, df_core):
     gmm = load(REPO_ROOT / 'gmm_model.joblib')
     X_core = load(REPO_ROOT / 'X_core_pca.joblib')
     labels = load(REPO_ROOT / 'labels_core.joblib')
+    clusterer = load(REPO_ROOT / "hdbscan_model.joblib")
     
     # Perform clustering preprocessing
     X_var = vt.transform(patient_feature_df)
@@ -266,12 +269,15 @@ def assign_patient(patient_feature_df, df_core):
     # New patient is last value
     sil_score = sil_values[-1]
 
+    # Predict cluster and membership probability for the new patient
+    hdbscan_label, hdbscan_proba = approximate_predict(clusterer, X_pca)
+    hdbscan_proba = hdbscan_proba[0]
+    
     # Update patient row
-    # ===================================================================================
-    patient_feature_df_extended = "extend (add cluster label prob sil score)"
-    # ===================================================================================
+    patient_feature_df_extended = patient_feature_df.copy().assign(cluster=cluster_label, cluster_prob=cluster_prob, 
+                                                                   HDBSCAN_proba=hdbscan_proba, Silhouette_score=sil_score)
 
-    df_core_dashboard = df_core.concate(patient_feature_df_extended).copy()
+    df_core_dashboard = pd.concat([df_core, patient_feature_df_extended], ignore_index=True).copy()
     out_dir = REPO_ROOT / "csv_dashboard"
     out_dir.mkdir(parents=True, exist_ok=True)
     df_core_dashboard.to_csv(out_dir / "df_dashboard.csv", index=False)
