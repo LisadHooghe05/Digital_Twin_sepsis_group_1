@@ -276,4 +276,5 @@ if __name__ == "__main__":
     print(icu_stay_rates)
     
     mean, significance_df, dunn_output = comparing_clusters(df_core, kw_df)
-    #print(dunn_output)
+    pd.set_option('display.max_rows', None)
+    print(dunn_output)
