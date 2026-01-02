@@ -90,6 +90,16 @@ def cluster_analysis(file_path, variance_thresh=0.01, pca_variance=0.90,
     df_core['cluster'] = labels
     df_core['HDBSCAN_proba'] = max_proba[core_mask]
     
+    # Add only the significant clusters in df_core
+    MIN_CLUSTER_SIZE = 70
+    cluster_sizes = df_core['cluster'].value_counts()
+    valid_clusters = cluster_sizes[cluster_sizes >= MIN_CLUSTER_SIZE].index.tolist()
+    df_core = df_core[df_core['cluster'].isin(valid_clusters)].copy()
+    
+    mask_valid = df_core.index
+    X_core_filtered = X_core[mask_valid, :]
+    labels_filtered = df_core['cluster'].values
+    
     # Define cluster distribution for cluster analysis
     cluster_counts = df_core['cluster'].value_counts().sort_index()
     cluster_percentages = (cluster_counts / cluster_counts.sum()) * 100
@@ -98,12 +108,12 @@ def cluster_analysis(file_path, variance_thresh=0.01, pca_variance=0.90,
     
     # Silhouette and Davies-Bouldin
     if len(np.unique(labels)) > 1:
-        sil = silhouette_score(X_core, labels)
-        sil_per_patient = silhouette_samples(X_core, labels)
+        sil = silhouette_score(X_core_filtered, labels_filtered)
+        sil_per_patient = silhouette_samples(X_core_filtered, labels_filtered)
 
         df_core['Silhouette_score'] = sil_per_patient
 
-        dbi = davies_bouldin_score(X_core, labels)
+        dbi = davies_bouldin_score(X_core_filtered, labels_filtered)
     else:
         sil = dbi = np.nan
         df_core['Silhouette_score'] = np.nan
@@ -115,7 +125,6 @@ def cluster_analysis(file_path, variance_thresh=0.01, pca_variance=0.90,
     icu_stay_rates = (df_core.loc[df_core['ICU_stay_12hforakitime'] != 0].groupby('cluster')['ICU_stay_12hforakitime'].mean())
     
     # Kruskal-Wallis and eta-squared feature importance
-    MIN_CLUSTER_SIZE = 70
     eta_sq_threshold = 0.01
     rows = []
 
@@ -258,7 +267,9 @@ def assign_patient(patient_feature_df, df_core):
     sil_score = sil_values[-1]
 
     # Update patient row
+    # ===================================================================================
     patient_feature_df_extended = "extend (add cluster label prob sil score)"
+    # ===================================================================================
 
     df_core_dashboard = df_core.concate(patient_feature_df_extended).copy()
     out_dir = REPO_ROOT / "csv_dashboard"
