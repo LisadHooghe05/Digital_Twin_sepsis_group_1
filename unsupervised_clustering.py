@@ -112,18 +112,40 @@ def cluster_analysis(file_path, variance_thresh=0.01, pca_variance=0.90,
     # Mortality rates per cluster
     mortality_rates = df_core.groupby('cluster')['died_within_90d_after_AKI'].mean()
     
-    # Kruskal-Wallis feature importance
+    # Kruskal-Wallis and eta-squared feature importance
+    MIN_CLUSTER_SIZE = 70
+    eta_sq_threshold = 0.06
     rows = []
-    feature_cols = df_core.columns.drop(['cluster', 'ICU_stay_12hforakitime', 'died_within_90d_after_AKI'])
+
+    # Identify valid clusters
+    cluster_sizes = df_core['cluster'].value_counts()
+    valid_clusters = cluster_sizes[cluster_sizes >= MIN_CLUSTER_SIZE].index.tolist()
+
+    if len(valid_clusters) < 2:
+        raise ValueError("Not enough clusters ≥ min_cluster_size for Kruskal-Wallis test")
+
+    feature_cols = df_core.columns.drop(['cluster',
+        'ICU_stay_12hforakitime','died_within_90d_after_AKI',
+        'cluster_prob', 'HDBSCAN_proba', 'Silhouette_score'])
+
     for col in feature_cols:
-        groups = [df_core[df_core['cluster']==c][col] for c in df_core['cluster'].unique()]
-        if any(len(set(g)) == 1 for g in groups):
+        groups = [df_core.loc[df_core['cluster'] == c, col].dropna()
+            for c in valid_clusters]
+
+        if any(g.nunique() <= 1 for g in groups):
             continue
+
         stat, p = kruskal(*groups)
+
         n = sum(len(g) for g in groups)
         k = len(groups)
+
         eta_sq = (stat - k + 1) / (n - k)
-        rows.append({"feature": col, "H": stat, "p": p, "eta_sq": eta_sq})
+
+        if eta_sq < eta_sq_threshold:
+            continue
+        rows.append({"feature": col, "H": stat, "p": p,
+                     "eta_sq": eta_sq, "n_clusters": k})
     
     kw_df = pd.DataFrame(rows)
     
@@ -221,7 +243,7 @@ if __name__ == "__main__":
     df_core, bic_scores, sil, dbi, kw_df, cluster_distribution, mortality_rates, vt, scaler, pca, best_gmm = cluster_analysis(PATH_DATA,variance_thresh=0.01, pca_variance=0.90, 
                      min_cluster_size=50, hdb_prob_thresh=0.835, save_models=True)
     print(f" bic: {bic_scores}, dbi: {dbi}, sil: {sil}, mortality rate:{mortality_rates}")
-    print(cluster_distribution)
+    print(kw_df)
     
     mean, significance_df, dunn_output = comparing_clusters(df_core, kw_df)
     #print(dunn_output)
