@@ -204,13 +204,33 @@ def comparing_clusters(cluster_df, significance_df):
     return mean, significance_df, dunn_output
 
 
-def assign_patient(patient_feature_df):
+def assign_patient(patient_feature_df, df_core):
     """
     Assign a new patient to an existing cluster. (Process patient exactly the same way as 
     overall clustering)
     
     patient_df: single-row dataframe with the same features used for clustering
     """
+    # Force vital input or median from df_core
+    vitals = {'age_12h_before_AKI': 68,
+              'Diastolic Blood Pressure': 61,
+              'Heart Rate': 88.18,
+              'Mean Arterial Pressure': 73.10,
+              'Oxygen Saturation': 96.77,
+              'Respiratory Rate': 20.17,
+                'Systolic Blood Pressure':110}
+    for vital, median in vitals.items():
+        if vital in patient_feature_df.columns:
+            patient_feature_df[vital] = patient_feature_df[vital].fillna(median)
+    
+    # Add 0 if feature not defined
+    other_features = []
+    for column in patient_feature_df.columns:
+        if column not in vitals:
+            other_features.append(column)
+    for feature in other_features:
+        patient_feature_df[feature] = patient_feature_df[feature].fillna(0)
+        
     # Load clustering modelling
     vt = load(REPO_ROOT / 'vt_model.joblib')
     scaler = load(REPO_ROOT / 'scaler_model.joblib')
@@ -236,8 +256,16 @@ def assign_patient(patient_feature_df):
     
     # New patient is last value
     sil_score = sil_values[-1]
+
+    # Update patient row
+    patient_feature_df_extended = "extend (add cluster label prob sil score)"
+
+    df_core_dashboard = df_core.concate(patient_feature_df_extended).copy()
+    out_dir = REPO_ROOT / "csv_dashboard"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    df_core_dashboard.to_csv(out_dir / "df_dashboard.csv", index=False)
     
-    return cluster_label, cluster_prob, sil_score
+    return cluster_label, cluster_prob, sil_score, df_core_dashboard
 
 
 if __name__ == "__main__":

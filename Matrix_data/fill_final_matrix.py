@@ -54,10 +54,12 @@ def fill_matrix_with_zeros():
 
     return missing_values, medians_df,final_matrix
 
-# result_1, result_2, result_3 = fill_matrix_with_zeros()
+result_1, result_2, result_3 = fill_matrix_with_zeros()
 # print(result_1[result_1['missing_values'] > 0])
-# print(result_2)
+print(result_2)
 # print(result_3)
+
+
 
 
 
