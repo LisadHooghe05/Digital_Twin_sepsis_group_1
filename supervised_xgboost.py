@@ -8,6 +8,8 @@ from xgboost import XGBClassifier, XGBRegressor
 import statsmodels.api as sm
 from statsmodels.stats.multitest import multipletests
 
+from unsupervised_clustering import cluster_analysis
+
 REPO_ROOT = Path(__file__).resolve().parent
 PATH_DATA = REPO_ROOT / "matrix_filled.csv"
 
@@ -192,7 +194,8 @@ def icu_associations(
     return res
 
 def supervised_and_associations():
-    df = load_matrix(PATH_DATA)
+    df_core, *_ = cluster_analysis(PATH_DATA, save_models=False)
+    df = df_core
 
     # XGBoost (predictive)
     print("\n=== XGBoost: Mortality ===")
