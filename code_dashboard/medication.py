@@ -16,7 +16,7 @@ def get_subject_ids_from_vitals(PATH_DATA, aki_subjects):
     return vitals_df['subject_id'].unique()
 
 def combine_all_to_one_csv_long_with_time():
-    REPO_ROOT = Path.cwd()
+    REPO_ROOT = Path(__file__).resolve().parent.parent
     PATH_DATA = REPO_ROOT / "data"
 
     # print("Loading AKI info...")
