@@ -90,15 +90,20 @@ def cluster_analysis(file_path, variance_thresh=0.01, pca_variance=0.90,
     df_core['cluster'] = labels
     df_core['HDBSCAN_proba'] = max_proba[core_mask]
     
-    # Add only the significant clusters in df_core
+    # Add only the significant clusters in df_core (AND keep X_core aligned)
     MIN_CLUSTER_SIZE = 70
     cluster_sizes = df_core['cluster'].value_counts()
     valid_clusters = cluster_sizes[cluster_sizes >= MIN_CLUSTER_SIZE].index.tolist()
-    df_core = df_core[df_core['cluster'].isin(valid_clusters)].copy()
-    
-    mask_valid = df_core.index
-    X_core_filtered = X_core[mask_valid, :]
+
+    valid_mask = df_core['cluster'].isin(valid_clusters).values  # lengte = len(df_core) = len(X_core)
+
+    df_core = df_core.loc[valid_mask].copy()
+    X_core = X_core[valid_mask, :]          # <-- update X_core so it matches df_core
+
+    # From here on, use these aligned versions
+    X_core_filtered = X_core
     labels_filtered = df_core['cluster'].values
+
     
     # Define cluster distribution for cluster analysis
     cluster_counts = df_core['cluster'].value_counts().sort_index()
@@ -182,8 +187,21 @@ def comparing_clusters(cluster_df, significance_df):
     """
     Analyze important features using means, FDR correction, and Dunn test for pairwise clusters.
     """
-    important_features = ["Oxygen Saturation", "Furosemide", "Vancomycin",
-                          "Norepinephrine", "Heart Failure"]
+    important_features = [
+    "age_12h_before_AKI",
+    "Diastolic Blood Pressure",
+    "Heart Rate",
+    "Mean Arterial Pressure",
+    "Oxygen Saturation",
+    "Furosemide",
+    "Vancomycin",
+    "Cefepime",
+    "Metoprolol",
+    "Invasive ventilation",
+    "Diabetes Mellitus",
+    "Heart Failure",
+    "Hypertension",
+    ]
     
     mean = cluster_df.groupby("cluster")[important_features].mean(numeric_only=True)
 
