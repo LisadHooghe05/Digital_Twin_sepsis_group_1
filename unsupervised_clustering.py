@@ -1,3 +1,4 @@
+
 import pandas as pd
 import hdbscan
 from pathlib import Path
@@ -78,6 +79,7 @@ def cluster_analysis(file_path, variance_thresh=0.01, pca_variance=0.90,
     
     best_k = np.argmin(bic_scores) + 3
     best_gmm = models[np.argmin(bic_scores)]
+    print(f"best number cluster: {best_k}")
     
     labels = best_gmm.predict(X_core)
 
@@ -87,12 +89,19 @@ def cluster_analysis(file_path, variance_thresh=0.01, pca_variance=0.90,
 
     df_core['cluster'] = labels
     df_core['HDBSCAN_proba'] = max_proba[core_mask]
+    
+    # Define cluster distribution for cluster analysis
+    cluster_counts = df_core['cluster'].value_counts().sort_index()
+    cluster_percentages = (cluster_counts / cluster_counts.sum()) * 100
+    cluster_distribution = pd.DataFrame({"n_patients": cluster_counts,
+                                         "percentage": cluster_percentages})
+    
     # Silhouette and Davies-Bouldin
     if len(np.unique(labels)) > 1:
         sil = silhouette_score(X_core, labels)
         sil_per_patient = silhouette_samples(X_core, labels)
 
-        df_core['Silhouette_score'] = (sil_per_patient + 1) / 2  # rescale 0-1
+        df_core['Silhouette_score'] = sil_per_patient
 
         dbi = davies_bouldin_score(X_core, labels)
     else:
@@ -133,7 +142,7 @@ def cluster_analysis(file_path, variance_thresh=0.01, pca_variance=0.90,
     kw_df.to_csv(out_dir / "cluster_feature_importance.csv", index=False)
 
     
-    return df_core, bic_scores, sil, dbi, kw_df, mortality_rates, vt, scaler, pca, best_gmm
+    return df_core, bic_scores, sil, dbi, kw_df, cluster_distribution, mortality_rates, vt, scaler, pca, best_gmm
 
 
 def comparing_clusters(cluster_df, significance_df):
@@ -172,7 +181,6 @@ def comparing_clusters(cluster_df, significance_df):
     return mean, significance_df, dunn_output
 
 
-
 def assign_patient(patient_feature_df):
     """
     Assign a new patient to an existing cluster. (Process patient exactly the same way as 
@@ -204,14 +212,16 @@ def assign_patient(patient_feature_df):
     sil_values = silhouette_samples(all_X, all_labels)
     
     # New patient is last value
-    sil_score = (sil_values[-1] + 1) / 2  # rescale 0-1
+    sil_score = sil_values[-1]
     
     return cluster_label, cluster_prob, sil_score
 
 
 if __name__ == "__main__":
-    df_core, bic_scores, sil, dbi, kw_df, mortality_rates, vt, scaler, pca, best_gmm = cluster_analysis(PATH_DATA)
+    df_core, bic_scores, sil, dbi, kw_df, cluster_distribution, mortality_rates, vt, scaler, pca, best_gmm = cluster_analysis(PATH_DATA,variance_thresh=0.01, pca_variance=0.90, 
+                     min_cluster_size=50, hdb_prob_thresh=0.835, save_models=True)
     print(f" bic: {bic_scores}, dbi: {dbi}, sil: {sil}, mortality rate:{mortality_rates}")
-
+    print(cluster_distribution)
+    
     mean, significance_df, dunn_output = comparing_clusters(df_core, kw_df)
-    print(dunn_output)
+    #print(dunn_output)

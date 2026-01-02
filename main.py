@@ -58,12 +58,12 @@ def main():
 
     
     print("Running unsupervised clustering...")
-    df_core, bic_scores, sil, dbi, kw_df, mortality_rates, vt, scaler, pca, best_gmm = cluster_analysis(
+    df_core, bic_scores, sil, dbi, kw_df, cluster_distribution, mortality_rates, vt, scaler, pca, best_gmm = cluster_analysis(
         REPO_ROOT / "matrix_filled.csv"
     )
     print("Unsupervised clustering done.")
     print(f"Core points: {len(df_core)} | silhouette: {sil} | DBI: {dbi}")
-    print("Saved Power BI CSVs to csv_dashboard/")
+    print("Saved Power BI CSVs to csv_dashboard")
 
     df_dashboard = dataframe_dashboard(df_core)
     print("df_dashboard saved to csv_dashboard")
