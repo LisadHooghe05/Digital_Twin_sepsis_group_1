@@ -189,13 +189,26 @@ python main.py
  ```
 2.	If everything is set up correctly, the code should now run successfully. The code will take some time to run, when the **(digitaltwin) PS C:\ ....** is shown again, this means that the code is finished. 
 
+## 11. Download Power BI
+1. Open the Microsoft Store on you computer or laptop
+2. Search for "Power BI Desktop"
+3. Click Get or Install
+4. Once installed, launch the app and you are ready to open .pbix files
+
 ## How the code works
-When the main.py script is executed, it generates several output files. One of these is AKI_stage_output, which is derived from the creatinine and sepsis data of the patients. This file contains each patient’s baseline values, which are necessary to determine whether a patient develops Acute Kidney Injury (AKI). It also records the time at which a patient’s value exceeds the baseline, providing the AKI_time, which indicates when AKI is diagnosed. Using this information, all sepsis patients can be classified into those with and without AKI, patients diagnosed with AKI are listed in AKI_subjects. This file is subsequently used to filter the sepsis AKI patients from the full patient cohort, enabling the creation of a matrix that includes only these patients’ data.
+When the main.py script is executed, it generates several output files. One of these is AKI_stage_output, which is derived from the creatinine and sepsis data of the patients. This file contains each patient’s baseline values, which are necessary to determine whether a patient develops Acute Kidney Injury (AKI). It also records the time at which a patient’s value exceeds the baseline, providing the AKI_time, which indicates when AKI is diagnosed. Using this information, all sepsis patients can be classified into those with AKI and without AKI, patients diagnosed with AKI are listed in AKI_subjects. This file is subsequently used to filter the sepsis AKI patients from the full patient cohort, enabling the creation of a matrix that includes only these patients’ data.
+
 Once the files are generated, a matrix is constructed, filtered to include only sepsis AKI patients who also have corresponding vitals data. The subject_ids of these patients are used as identifiers in the matrix. Any remaining missing values (NaN) in the matrix are imputed: for vitals that cannot be recovered, missing entries are replaced with zeros, whereas for others, the median values are used to retain meaningful information for each patient. The resulting matrix is then utilized for clustering analysis, and the identified clusters can inform medical decision-making and provide guidance to clinicians.
 
+The folder code_dashboard contains codes that generates different csv files which are then stored in the csv_dashboard folder: creatinine_filtered, conditions_per_subject, meds_12h_before_AKI amounts and binary, subject_ids, vitals_chronological. These files are used in the dashboard to visualize patient data, including heart rate graphs, patient medical history, medications, and creatinine values between twelve hours before and after the AKI diagnosis. This allows doctors to observe changes in these values, which can indicate the development of AKI. 
+
+The code in unsupervised_clustering is used within csv_dashboard to get only the subject ids that are in the 3 most important clusters. It will return a csv file named df_dashboard that is used to get the cluster probability and silhouette scores per subject id and give those values a color when the value is higher than 0.7. 
+
 **ADDING which files you also get from the csv_dashboard and the clustering**
+
+
 ## Using CSV Files in the Dashboard
-After running the code, several CSV files will be generated in the csv_dashboard folder. Most of these files are already linked to the dashboard, so you don’t need to connect them manually. This also helps you understand where the data comes from and allows you to recreate the dashboard if needed.
+After running the main code, the folder csv_dashboard contains all the csv files that are used in the dashboard. All these files are already linked to the dashboard group sepsis 1, so you don’t need to connect them manually. These files allow you to recreate the dashboard if needed. To open the dashboard, launch the Power BI app and open the file Dashboard group 1 Sepsis.pbix, which was provided along with the code and other resources."
 
 If you want to add new patient information, you will need to run certain parts of the code again. The updated data will then automatically be reflected in the dashboard.
 

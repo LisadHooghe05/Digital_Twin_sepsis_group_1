@@ -6,6 +6,7 @@ To be able to run the code, you must meet the requirements listed in the section
 - Python version: Python 3.12.x(tested with Python 3.12.10)
 - Git==2.51.0.windows.1 (for version control)
 - Visual Studio Code version 1.107.1
+- Power BI Desktop
 
 ### 2. Python Package Requirements
 > **Note:**  After doing all the steps in the README you should see the following list when running pip list in the terminal.
@@ -41,6 +42,7 @@ tzdata==2025.3
 2. Clone the project repository
 3. Create a virtual environment
 4. Install the required packages
+5. Install PowerBI Desktop
 
 ### 4. Functional Requirements
 - The code needs to have access to new made folder that contains the csv files from the zip folder, which contains the MIMIC-IV data. Otherwise, the code will not run.
