@@ -10,7 +10,7 @@ By identifying patient subgroups and their associated risk factors, this project
 ## How to Run the Code
 
 ### 1. Download and install Python
-> **Note:** If you already have Python 3.12.10 (or later) installed on your system, you can skip this step.
+> **Note:** If you already have Python 3.12.10 installed on your system, you can skip this step.
 
 1. Go to the following website and install python version 3.12.10: [Python 3.12.10](https://www.python.org/downloads/release/python-31210/).  
 2. Scroll down to **Files**.  
