@@ -36,7 +36,7 @@ def dataframe_dashboard(df_core):
 
     out_dir = REPO_ROOT / "csv_dashboard"
     out_dir.mkdir(parents=True, exist_ok=True)
-    df_dashboard.to_csv(out_dir / "df_dashboard.csv", index=False, decimal=',')
+    df_dashboard.to_csv(out_dir / "df_dashboard.csv", index=False)
 
     return df_dashboard
 
