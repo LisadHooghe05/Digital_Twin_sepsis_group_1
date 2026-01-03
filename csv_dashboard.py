@@ -26,9 +26,17 @@ def dataframe_dashboard(df_core):
                             'Hypertension', 'Malignancy', 'Obstructive Uropathy',
                             'Sepsis', 'Silhouette_score', 'HDBSCAN_proba']].copy()
     
+    # Add Silhouette Color 
+    df_dashboard['Silhouette_Color'] = df_dashboard['Silhouette_score'].apply(
+        lambda x: None if pd.isna(x) else ("#FF0000" if x < 0.7 else "#0000FF"))
+
+    # Add Cluster Color 
+    df_dashboard['Cluster_Color'] = df_dashboard['cluster_prob'].apply(
+        lambda x: None if pd.isna(x) else ("#FF0000" if x < 0.7 else "#0000FF"))
+
     out_dir = REPO_ROOT / "csv_dashboard"
     out_dir.mkdir(parents=True, exist_ok=True)
-    df_dashboard.to_csv(out_dir / "df_dashboard.csv", index=False)
+    df_dashboard.to_csv(out_dir / "df_dashboard.csv", index=False, decimal=',')
 
     return df_dashboard
 
