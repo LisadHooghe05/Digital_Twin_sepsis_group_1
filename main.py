@@ -33,7 +33,7 @@ def main():
     matrix = build_feature_matrix()
     print(f"Amount of patients in matrix: {matrix['subject_id'].nunique()}")
     missing_values,medians_df,final_matrix = fill_matrix_with_zeros()
-    #Print missing values greater than 0
+    # Print missing values greater than 0
     print("Missing values in some columns:")
     print(missing_values[missing_values['missing_values'] > 0])
 
@@ -59,8 +59,8 @@ def main():
     
     print("Running unsupervised clustering...")
     df_core, bic_scores, sil, dbi, kw_df, cluster_distribution, mortality_rates, icu_stay_rates, vt, scaler, pca, best_gmm = cluster_analysis(
-        REPO_ROOT / "matrix_filled.csv"
-    )
+        REPO_ROOT / "matrix_filled.csv",variance_thresh=0.01, pca_variance=0.90, min_cluster_size=50, hdb_prob_thresh=0.835, save_models=True)
+    
     print("Unsupervised clustering done.")
     print(f"Core points: {len(df_core)} | silhouette: {sil} | DBI: {dbi}")
     print("Saved Power BI CSVs to csv_dashboard")
