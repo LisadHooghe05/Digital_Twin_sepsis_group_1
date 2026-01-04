@@ -25,7 +25,9 @@ def dataframe_dashboard(df_core):
     df_dashboard = df_core[['subject_id', 'cluster', 'cluster_prob', 'Autoimmune / Vasculitis', 
                             'Chronic Kidney Disease', 'Diabetes Mellitus', 'Heart Failure',
                             'Hypertension', 'Malignancy', 'Obstructive Uropathy',
-                            'Sepsis', 'Silhouette_score', 'HDBSCAN_proba']].copy()
+                            'Sepsis', 'Silhouette_score', 'HDBSCAN_proba', 'Invasive ventilation', 'Cefepime',
+                            'age_12h_before_AKI', 'Metoprolol', 'Furosemide (Lasix)', 'Furosemide (Lasix) 250/50',
+                            'Vancomycin']].copy()
     
     # Add Silhouette Color 
     df_dashboard['Silhouette_Color'] = df_dashboard['Silhouette_score'].apply(
@@ -34,10 +36,6 @@ def dataframe_dashboard(df_core):
     # Add Cluster Color 
     df_dashboard['Cluster_Color'] = df_dashboard['cluster_prob'].apply(
         lambda x: None if pd.isna(x) else ("#FF0000" if x < 0.7 else "#0000FF"))
-
-    out_dir = REPO_ROOT / "csv_dashboard"
-    out_dir.mkdir(parents=True, exist_ok=True)
-    df_dashboard.to_csv(out_dir / "df_dashboard.csv", index=False)
 
     # Add Medical Advice
     cluster_advice_map = {3: "Cluster 3 shows the lowest mortality (13.9%), and a short ICU stay (~2d). Patients display more stable physiology and fewer high-risk features, making this the most favorable phenotype.",
@@ -51,13 +49,30 @@ def dataframe_dashboard(df_core):
                                             'text': "History of diabetes, associated with elevated mortality risk."},
                           'Hypertension': {'condition': lambda x: x == 1,
                                             'text': "History of hypertension, associated with longer ICU stay."},
-    }
+                          'Invasive ventilation': {'condition': lambda x: x > 0,
+                                            'text': "Invasive ventilation shows clear association with increased mortality odds."},
+                          'Cefepime': {'condition': lambda x: x > 0,
+                                            'text': "Cefepime us is linked to higher mortality odds."},
+                          # Everybody will have this advice
+                          'age_12h_before_AKI': {'condition': lambda x: x > 0,
+                                            'text': "Age shows positive association with mortality odds in the model."},
+                          'Metoprolol': {'condition': lambda x: x > 0,
+                                            'text': "Shows a modest association with increased mortality odds."},
+                          'Furosemide (Lasix)': {'condition': lambda x: x > 0,
+                                            'text': "Furosemide is associated with a shorter ICU stay."},
+                          'Furosemide (Lasix) 250/50': {'condition': lambda x: x > 0,
+                                            'text': "Furosemide is associated with a shorter ICU stay."},
+                          'Vancomycin': {'condition': lambda x: x > 0,
+                                            'text': "Vancomycin is linked to a reduced ICU stay duration."}}
+    
     for feature, rule in feature_advice_map.items():
         if feature in df_dashboard.columns:
-            df_dashboard[f'{feature}_Advice'] = np.where(
-                df_dashboard[feature] == 1,
-                rule['text'],
-                np.nan)
+            mask = df_dashboard[feature].apply(rule['condition'])
+            df_dashboard.loc[mask, f'{feature}_Advice'] = rule['text']
+
+    out_dir = REPO_ROOT / "csv_dashboard"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    df_dashboard.to_csv(out_dir / "df_dashboard.csv", index=False)
 
     return df_dashboard
 
