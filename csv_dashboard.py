@@ -1,5 +1,6 @@
 import pandas as pd
 from pathlib import Path
+import numpy as np
 
 # Set root and file path
 REPO_ROOT = Path(__file__).resolve().parent
@@ -37,6 +38,26 @@ def dataframe_dashboard(df_core):
     out_dir = REPO_ROOT / "csv_dashboard"
     out_dir.mkdir(parents=True, exist_ok=True)
     df_dashboard.to_csv(out_dir / "df_dashboard.csv", index=False)
+
+    # Add Medical Advice
+    cluster_advice_map = {3: "Cluster 3 shows the lowest mortality (13.9%), and a short ICU stay (~2d). Patients display more stable physiology and fewer high-risk features, making this the most favorable phenotype.",
+                          4: "Cluster 4 shows the highest mortality (18.1%) and the moderate ICU stay (~5.7d). This phenoty concentrates more high-risk features and represents the least favorable survival profile.",
+                          5: "Cluster 5 shows moderate mortality (14.9%) but the longest ICU stay (~6.7d). This phenotype suggests a prolonged recovery trajectory despite not having the highest morality."}   
+    df_dashboard['Cluster_Advice'] = df_dashboard['cluster'].map(cluster_advice_map)
+
+    feature_advice_map = {'Heart Failure': {'condition': lambda x: x == 1,
+                                            'text': "History of heart failure, strongly associated with higher mortality risk."},
+                          'Diabetes Mellitus': {'condition': lambda x: x == 1,
+                                            'text': "History of diabetes, associated with elevated mortality risk."},
+                          'Hypertension': {'condition': lambda x: x == 1,
+                                            'text': "History of hypertension, associated with longer ICU stay."},
+    }
+    for feature, rule in feature_advice_map.items():
+        if feature in df_dashboard.columns:
+            df_dashboard[f'{feature}_Advice'] = np.where(
+                df_dashboard[feature] == 1,
+                rule['text'],
+                np.nan)
 
     return df_dashboard
 
