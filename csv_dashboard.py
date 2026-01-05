@@ -31,11 +31,11 @@ def dataframe_dashboard(df_core):
     
     # Add Silhouette Color 
     df_dashboard['Silhouette_Color'] = df_dashboard['Silhouette_score'].apply(
-        lambda x: None if pd.isna(x) else ("#FF0000" if x < 0.7 else "#0000FF"))
+        lambda x: None if pd.isna(x) else ("#FF0000" if x < 0.7 else "#000000"))
 
     # Add Cluster Color 
     df_dashboard['Cluster_Color'] = df_dashboard['cluster_prob'].apply(
-        lambda x: None if pd.isna(x) else ("#FF0000" if x < 0.7 else "#0000FF"))
+        lambda x: None if pd.isna(x) else ("#FF0000" if x < 0.7 else "#000000"))
 
     # Add Medical Advice
     cluster_advice_map = {3: "Cluster 3 shows the lowest mortality (13.9%), and a short ICU stay (~2d). Patients display more stable physiology and fewer high-risk features, making this the most favorable phenotype.",
