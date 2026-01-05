@@ -14,6 +14,7 @@ from statsmodels.stats.multitest import multipletests
 import scikit_posthocs as sp
 import itertools
 from joblib import dump, load
+from csv_dashboard import dataframe_dashboard
 
 # Set root
 REPO_ROOT = Path(__file__).resolve().parent
@@ -171,7 +172,7 @@ def cluster_analysis(file_path, variance_thresh=0.01, pca_variance=0.90,
         dump(pca, REPO_ROOT / "pca_model.joblib")
         dump(best_gmm, REPO_ROOT / "gmm_model.joblib")
         dump(X_core, REPO_ROOT /  "X_core_pca.joblib")      
-        dump(labels, REPO_ROOT / "labels_core.joblib")
+        dump(labels_filtered, REPO_ROOT / "labels_core.joblib")
         dump(clusterer, REPO_ROOT / "hdbscan_model.joblib")
 
     out_dir = REPO_ROOT / "csv_dashboard"
@@ -254,9 +255,11 @@ def assign_patient(patient_feature_df, df_core):
     X_core = load(REPO_ROOT / 'X_core_pca.joblib')
     labels = load(REPO_ROOT / 'labels_core.joblib')
     clusterer = load(REPO_ROOT / "hdbscan_model.joblib")
-    
+
+    patient_X = patient_feature_df.drop(columns=['subject_id', 'ICU_stay_12hforakitime', 'died_within_90d_after_AKI'], errors='ignore')
+
     # Perform clustering preprocessing
-    X_var = vt.transform(patient_feature_df)
+    X_var = vt.transform(patient_X)
     X_scaled = scaler.transform(X_var)
     X_pca = pca.transform(X_scaled)
     
@@ -265,11 +268,11 @@ def assign_patient(patient_feature_df, df_core):
     
     # Cluster probability
     cluster_prob = gmm.predict_proba(X_pca).max()
+    
     # Compute silhouette of new patient
     all_X = np.vstack([X_core, X_pca])
-    all_labels = np.append(labels, cluster_label)
-    sil_values = silhouette_samples(all_X, all_labels)
-    
+    all_labels = np.append(np.array(labels).ravel(), cluster_label)
+    sil_values = silhouette_samples(all_X, all_labels)  
     # New patient is last value
     sil_score = sil_values[-1]
 
@@ -282,11 +285,16 @@ def assign_patient(patient_feature_df, df_core):
                                                                    HDBSCAN_proba=hdbscan_proba, Silhouette_score=sil_score)
 
     df_core_dashboard = pd.concat([df_core, patient_feature_df_extended], ignore_index=True).copy()
+    
+    # Process new dashboard csv
+    df_dashboard = dataframe_dashboard(df_core_dashboard)
+    
+    # Overwrite older df_dashboard csv
     out_dir = REPO_ROOT / "csv_dashboard"
     out_dir.mkdir(parents=True, exist_ok=True)
-    df_core_dashboard.to_csv(out_dir / "df_dashboard.csv", index=False)
+    df_dashboard.to_csv(out_dir / "df_dashboard.csv", index=False)
     
-    return cluster_label, cluster_prob, sil_score, df_core_dashboard
+    return df_dashboard
 
 
 if __name__ == "__main__":
