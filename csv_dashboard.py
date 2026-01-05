@@ -57,18 +57,22 @@ def dataframe_dashboard(df_core):
                           'age_12h_before_AKI': {'condition': lambda x: x > 0,
                                             'text': "Age shows modest positive association with mortality odds in the model."},
                           'Metoprolol': {'condition': lambda x: x > 0,
-                                            'text': "Shows a modest association with increased mortality odds."},
-                          'Furosemide (Lasix)': {'condition': lambda x: x > 0,
-                                            'text': "Furosemide is associated with a shorter ICU stay."},
-                          'Furosemide (Lasix) 250/50': {'condition': lambda x: x > 0,
+                                            'text': "Metoprolol shows a modest association with increased mortality odds."},
+                          ('Furosemide (Lasix)', 'Furosemide (Lasix) 250/50'): {'condition': lambda x: x > 0,
                                             'text': "Furosemide is associated with a shorter ICU stay."},
                           'Vancomycin': {'condition': lambda x: x > 0,
                                             'text': "Vancomycin is linked to a reduced ICU stay duration."}}
     
     for feature, rule in feature_advice_map.items():
-        if feature in df_dashboard.columns:
-            mask = df_dashboard[feature].apply(rule['condition'])
-            df_dashboard.loc[mask, f'{feature}_Advice'] = rule['text']
+        if isinstance(feature, tuple):
+            columns = feature
+        else:
+            columns = [feature]
+        
+        for col in columns:
+            if col in df_dashboard.columns:
+                mask = df_dashboard[col].apply(rule['condition'])
+                df_dashboard.loc[mask, f'{col}_Advice'] = rule['text']
 
     out_dir = REPO_ROOT / "csv_dashboard"
     out_dir.mkdir(parents=True, exist_ok=True)
