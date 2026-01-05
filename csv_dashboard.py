@@ -39,7 +39,7 @@ def dataframe_dashboard(df_core):
 
     # Add Medical Advice
     cluster_advice_map = {3: "Cluster 3 shows the lowest mortality (13.9%), and a short ICU stay (~2d). Patients display more stable physiology and fewer high-risk features, making this the most favorable phenotype.",
-                          4: "Cluster 4 shows the highest mortality (18.1%) and the moderate ICU stay (~5.7d). This phenoty concentrates more high-risk features and represents the least favorable survival profile.",
+                          4: "Cluster 4 shows the highest mortality (18.1%) and the moderate ICU stay (~5.7d). This phenotype concentrates more high-risk features and represents the least favorable survival profile.",
                           5: "Cluster 5 shows moderate mortality (14.9%) but the longest ICU stay (~6.7d). This phenotype suggests a prolonged recovery trajectory despite not having the highest morality."}   
     df_dashboard['Cluster_Advice'] = df_dashboard['cluster'].map(cluster_advice_map)
 
@@ -50,12 +50,12 @@ def dataframe_dashboard(df_core):
                           'Hypertension': {'condition': lambda x: x == 1,
                                             'text': "History of hypertension, associated with longer ICU stay."},
                           'Invasive ventilation': {'condition': lambda x: x > 0,
-                                            'text': "Invasive ventilation shows clear association with increased mortality odds."},
+                                            'text': "Invasive ventilation shows strong association with increased mortality odds."},
                           'Cefepime': {'condition': lambda x: x > 0,
-                                            'text': "Cefepime us is linked to higher mortality odds."},
+                                            'text': "Cefepime use is strongly associated with higher mortality risk."},
                           # Everybody will have this advice
                           'age_12h_before_AKI': {'condition': lambda x: x > 0,
-                                            'text': "Age shows positive association with mortality odds in the model."},
+                                            'text': "Age shows modest positive association with mortality odds in the model."},
                           'Metoprolol': {'condition': lambda x: x > 0,
                                             'text': "Shows a modest association with increased mortality odds."},
                           'Furosemide (Lasix)': {'condition': lambda x: x > 0,
