@@ -19,7 +19,6 @@ def combine_all_to_one_csv_long_with_time():
     REPO_ROOT = Path(__file__).resolve().parent.parent
     PATH_DATA = REPO_ROOT / "data"
 
-    # print("Loading AKI info...")
     aki_subjects, aki_times = load_aki_info(REPO_ROOT)
     # print(f"Found {len(aki_subjects)} AKI subjects")
 
@@ -27,30 +26,44 @@ def combine_all_to_one_csv_long_with_time():
     subject_ids = get_subject_ids_from_vitals(PATH_DATA, aki_subjects)
     # print(f"{len(subject_ids)} subjects found in vitals")
 
-    def process_medications(df, med_column, amount_column=None):
+    def process_medications(df, med_column, amount_column=None, amountuom_column='amountuom'):
         if df.empty:
-            return pd.DataFrame(columns=['subject_id', 'medication', 'amount', 'starttime'])
+            return pd.DataFrame(
+                columns=['subject_id', 'medication', 'amount', 'amountuom', 'starttime']
+            )
+
         df = df.copy()
+
         df['starttime'] = pd.to_datetime(df.get('starttime', pd.NaT), errors='coerce')
         df['endtime'] = pd.to_datetime(df.get('endtime', pd.NaT), errors='coerce')
+
+        # Amount
         if amount_column and amount_column in df.columns:
             df['amount'] = pd.to_numeric(df[amount_column], errors='coerce')
         else:
-            df['amount'] = None  # binaire medicatie
-        df = df.rename(columns={med_column: 'medication'})
-        return df[['subject_id', 'medication', 'amount', 'starttime']]
+            df['amount'] = None  # binaire medication
 
-    # --- Medications ---
+        # Amount unit 
+        if amountuom_column in df.columns:
+            df['amountuom'] = df[amountuom_column]
+        else:
+            df['amountuom'] = None
+
+        # Rename medication column
+        df = df.rename(columns={med_column: 'medication'})
+
+        return df[['subject_id', 'medication', 'amount', 'amountuom', 'starttime']]
+
+    # Medications
 
     # Antibiotics
-    # print("Processing antibiotics...")
     ab_paths = [PATH_DATA / f"inputevents_sepsis{i}.csv" for i in [1,2,3]]
     antibiotics = [
         "Vancomycin", "Teicoplanin", "Co-trimoxazole", "Sulfadiazine",
         "Sulfacetamide", "Gentamicin", "Tobramycin", "Amikacin",
         "Streptomycin", "Piperacillin", "Meropenem", "Cefepime",
-        "Flucloxacillin", "Methicillin", "Bactrim (SMX/TMP)"
-    ]
+        "Flucloxacillin", "Methicillin", "Bactrim (SMX/TMP)"]
+    
     ab_dfs = []
     for path in ab_paths:
         df = pd.read_csv(path, dtype={'subject_id': str})
@@ -59,12 +72,11 @@ def combine_all_to_one_csv_long_with_time():
     df_ab_long = pd.concat(ab_dfs, ignore_index=True)
 
     # Diuretics
-    # print("Processing diuretics...")
     diu_paths = [PATH_DATA / f"inputevents_sepsis{i}.csv" for i in [1,2,3]]
     diuretics = [
         'Bumetanide (Bumex)', 'Furosemide (Lasix)', 'Furosemide (Lasix) 250/50',
-        'Torasemide', 'Metolazon', 'Chloortalidon'
-    ]
+        'Torasemide', 'Metolazon', 'Chloortalidon']
+    
     diu_dfs = []
     for path in diu_paths:
         df = pd.read_csv(path, dtype={'subject_id': str})
@@ -73,7 +85,6 @@ def combine_all_to_one_csv_long_with_time():
     df_diu_long = pd.concat(diu_dfs, ignore_index=True)
 
     # ACE/ARB
-    # print("Processing ACE/ARB...")
     ace_arb_df = pd.read_csv(PATH_DATA / "ACE_ARB.csv", dtype={'subject_id': str})
     ace_drugs = ['Captopril', 'Enalapril Maleate', 'Enalaprilat', 'Lisinopril', 'Quinapril']
     arb_drugs = ['Losartan Potassium', 'Valsartan']
@@ -81,7 +92,6 @@ def combine_all_to_one_csv_long_with_time():
     df_ace_arb_long = process_medications(ace_arb_df, 'drug')
 
     # Vasopressors
-    # print("Processing vasopressors...")
     df_vaso = pd.read_csv(PATH_DATA / "VASO.csv", dtype={'subject_id': str, 'stay_id': str})
     df_events = pd.read_csv(PATH_DATA / "vasopressors.csv", dtype={'stay_id': str})
     df_events = df_events.merge(df_vaso[['stay_id', 'subject_id']], on='stay_id', how='left')
@@ -89,8 +99,7 @@ def combine_all_to_one_csv_long_with_time():
     df_events['amount'] = pd.to_numeric(df_events['amount'], errors='coerce')
     df_vaso_long = process_medications(df_events, 'drug', 'amount')
 
-    # --- Combine ---
-    # print("Combining all medications...")
+    # Combine
     df_all_long = pd.concat([df_ab_long, df_diu_long, df_ace_arb_long, df_vaso_long], ignore_index=True)
     df_all_long = df_all_long.sort_values(['subject_id', 'starttime'])
 
@@ -106,17 +115,20 @@ def combine_all_to_one_csv_long_with_time():
         (df_all_long['starttime'] <= df_all_long['AKI_time'])]
 
     # Drop exact duplicates
-    df_all_long = df_all_long.drop_duplicates(subset=['subject_id', 'medication', 'starttime', 'AKI_time'])
+    df_all_long_amount = df_all_long.drop_duplicates(subset=['subject_id', 'medication','amountuom', 'starttime', 'AKI_time'])
+    df_all_long_binary = df_all_long.drop_duplicates(subset=['subject_id', 'medication', 'starttime', 'AKI_time'])
 
-    # --- Split into amounts vs binary ---
-    df_amounts = df_all_long[df_all_long['amount'].notna()].copy()
+
+    # Split into amounts vs binary 
+    df_amounts = df_all_long_amount[df_all_long_amount['amount'].notna()].copy()
     df_amounts['amount'] = df_amounts['amount'].round(2)
     amounts_path = REPO_ROOT / "csv_dashboard" / "meds_12h_before_AKI_amounts.csv"
     amounts_path.parent.mkdir(exist_ok=True)
     df_amounts.to_csv(amounts_path, index=False, decimal=',')
 
-    df_binary = df_all_long[df_all_long['amount'].isna()].copy()
+    df_binary = df_all_long_binary[df_all_long_binary['amount'].isna()].copy()
     df_binary['amount'] = 1  # binary = 1
+    df_binary = df_binary.drop(columns=['amountuom'], errors='ignore')
     binary_path = REPO_ROOT / "csv_dashboard" / "meds_12h_before_AKI_binary.csv"
     df_binary.to_csv(binary_path, index=False, decimal=',')
     return df_binary,df_amounts
@@ -124,5 +136,5 @@ def combine_all_to_one_csv_long_with_time():
     # print(f"Binary file saved to {binary_path}")
 
 
-# if __name__ == "__main__":
-#     combine_all_to_one_csv_long_with_time()
+f = combine_all_to_one_csv_long_with_time()
+print(f)
