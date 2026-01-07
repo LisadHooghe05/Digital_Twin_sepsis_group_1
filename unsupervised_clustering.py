@@ -174,6 +174,7 @@ def cluster_analysis(file_path, variance_thresh=0.01, pca_variance=0.90,
         dump(X_core, REPO_ROOT /  "X_core_pca.joblib")      
         dump(labels_filtered, REPO_ROOT / "labels_core.joblib")
         dump(clusterer, REPO_ROOT / "hdbscan_model.joblib")
+        dump(valid_clusters, REPO_ROOT / "valid_clusters.joblib")
 
     out_dir = REPO_ROOT / "csv_dashboard"
     out_dir.mkdir(exist_ok=True)
@@ -255,6 +256,7 @@ def assign_patient(patient_feature_df, df_core):
     X_core = load(REPO_ROOT / 'X_core_pca.joblib')
     labels = load(REPO_ROOT / 'labels_core.joblib')
     clusterer = load(REPO_ROOT / "hdbscan_model.joblib")
+    valid_clusters = load(REPO_ROOT / "valid_clusters.joblib")
 
     patient_X = patient_feature_df.drop(columns=['subject_id', 'ICU_stay_12hforakitime', 'died_within_90d_after_AKI'], errors='ignore')
 
@@ -263,11 +265,13 @@ def assign_patient(patient_feature_df, df_core):
     X_scaled = scaler.transform(X_var)
     X_pca = pca.transform(X_scaled)
     
-    # Predict cluster
-    cluster_label = gmm.predict(X_pca)[0]
+    # Predict cluster, force onto three valid clusters
+    probs = gmm.predict_proba(X_pca)[0]
+    valid_probs = {c: probs[c] for c in valid_clusters}
+    cluster_label = max(valid_probs, key=valid_probs.get)
     
     # Cluster probability
-    cluster_prob = gmm.predict_proba(X_pca).max()
+    cluster_prob = valid_probs[cluster_label]
     
     # Compute silhouette of new patient
     all_X = np.vstack([X_core, X_pca])
