@@ -72,7 +72,7 @@ def main():
 
 # Zorg dat dit script alleen draait als het direct wordt uitgevoerd
 if __name__ == "__main__":
-    df_core = main()
+    #df_core = main()
 
 #=============================================================================
 # Dynamic: Update patient!

@@ -209,6 +209,8 @@ The function assign_patient(), found at the bottom of the main.py script and cod
 
 To call and experiment with this function, at the bottom of the main.py script, the following lines of code should be uncommented:
 
+    df_core, bic_scores, sil, dbi, kw_df, cluster_distribution, mortality_rates, icu_stay_rates, vt, scaler, pca, best_gmm = cluster_analysis(
+        REPO_ROOT / "matrix_filled.csv",variance_thresh=0.01, pca_variance=0.90, min_cluster_size=50, hdb_prob_thresh=0.835, save_models=True)
     matrix_filled = pd.read_csv(REPO_ROOT / "matrix_filled.csv")
     patient_row = matrix_filled.loc[matrix_filled['subject_id'] == 10003400].copy()
     df_dashboard = assign_patient(patient_row, df_core)
@@ -221,7 +223,7 @@ For this GitHub example, the patient used is not a core patient (not in df_core 
 
 
 ## Using CSV Files in the Dashboard
-After running the main code, the folder csv_dashboard contains all the csv files that are used in the dashboard. All these files are already linked to the dashboard group sepsis 1, so you don’t need to import them manually. However, the file paths leading up to csv_dashboard differs per user, this can be changed by specifying you own file path in the parameter Datafolderpath under Transform data in Power BI These files allow you to recreate the dashboard if needed. To open the dashboard, launch the Power BI app and open the file Dashboard group 1 Sepsis.pbix, which was provided along with the code and other resources.
+After running the main code, the folder csv_dashboard contains all the csv files that are used in the dashboard. All these files are already linked to the dashboard group sepsis 1, so you don’t need to import them manually. However, the file paths leading up to csv_dashboard differs per user, this can be changed by specifying you own file path in the parameter Datafolderpath under Transform data in Power BI, and click on refresh. These files allow you to recreate the dashboard if needed. To open the dashboard, launch the Power BI app and open the file Dashboard group 1 Sepsis.pbix, which was provided along with the code and other resources.
 
 ## Contribution guidelines
 Other students or researchers are welcome to contribute to our project by building upon our code and dashboard. Contributions could include:
