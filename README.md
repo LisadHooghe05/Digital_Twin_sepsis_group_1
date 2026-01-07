@@ -204,6 +204,21 @@ The folder code_dashboard contains codes that generates different csv files whic
 
 The code in unsupervised_clustering is used within csv_dashboard to get only the subject ids that are in the 3 most important clusters. It will return a csv file named df_dashboard that is used to get the cluster probability and silhouette scores per subject id and give those values a color when the value is higher than 0.7. 
 
+### Dynamic Updates: Assigning New Patients to Clusters
+The function assign_patient(), found at the bottom of the main.py script and coded in unsupervised_clustering.py file, allows new or updated patient data to be clustered onto the existing unsupervised clustering framework. All preprocessing and clustering of the patient is performed in identical manners as core patients. It handles missing values, predicts the patient’s cluster assignment and probability, computes a silhouette score, and updates the dashboard CSV used for visualization.
+
+To call and experiment with this function, at the bottom of the main.py script, the following lines of code should be uncommented:
+    matrix_filled = pd.read_csv(REPO_ROOT / "matrix_filled.csv")
+    patient_row = matrix_filled.loc[matrix_filled['subject_id'] == 10003400].copy()
+
+    df_dashboard = assign_patient(patient_row, df_core)
+Thereafter, the following line of code should be commented in order to prevent calling the main function, due to the function's long execution time:
+    df_core = main()
+
+For this GitHub example, the patient used is not a core patient. However, the feature row for this subject ID is available in matrix_filled.csv. To test other patients, simply replace the subject ID (10003400) in the code below with any ID present in matrix_filled:
+    patient_row = matrix_filled.loc[matrix_filled['subject_id'] == 10003400].copy()
+
+
 **ADDING which files you also get from the csv_dashboard and the clustering**
 
 

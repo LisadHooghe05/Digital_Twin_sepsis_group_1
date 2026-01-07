@@ -80,6 +80,5 @@ if __name__ == "__main__":
 # Get patient 10003400 info row
 #matrix_filled = pd.read_csv(REPO_ROOT / "matrix_filled.csv")
 #patient_row = matrix_filled.loc[matrix_filled['subject_id'] == 10003400].copy()
-#print(f"patient row: {patient_row}")
 
 #df_dashboard = assign_patient(patient_row, df_core)
