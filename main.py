@@ -76,9 +76,11 @@ if __name__ == "__main__":
 
 #=============================================================================
 # Dynamic: Update patient!
-
+    #Define df_core outside of main
+    df_core, bic_scores, sil, dbi, kw_df, cluster_distribution, mortality_rates, icu_stay_rates, vt, scaler, pca, best_gmm = cluster_analysis(
+        REPO_ROOT / "matrix_filled.csv",variance_thresh=0.01, pca_variance=0.90, min_cluster_size=50, hdb_prob_thresh=0.835, save_models=True)
 # Get patient 10003400 info row
-#matrix_filled = pd.read_csv(REPO_ROOT / "matrix_filled.csv")
-#patient_row = matrix_filled.loc[matrix_filled['subject_id'] == 10003400].copy()
+    matrix_filled = pd.read_csv(REPO_ROOT / "matrix_filled.csv")
+    patient_row = matrix_filled.loc[matrix_filled['subject_id'] == 10003400].copy()
 
-#df_dashboard = assign_patient(patient_row, df_core)
+    df_dashboard = assign_patient(patient_row, df_core)

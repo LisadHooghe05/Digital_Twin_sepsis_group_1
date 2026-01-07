@@ -135,6 +135,6 @@ def combine_all_to_one_csv_long_with_time():
     # print(f"Amounts file saved to {amounts_path}")
     # print(f"Binary file saved to {binary_path}")
 
-
-f = combine_all_to_one_csv_long_with_time()
-print(f)
+if __name__ == "__main__":
+    f = combine_all_to_one_csv_long_with_time()
+    print(f)
