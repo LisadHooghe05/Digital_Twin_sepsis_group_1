@@ -212,14 +212,14 @@ To call and experiment with this function, at the bottom of the main.py script, 
     df_core, bic_scores, sil, dbi, kw_df, cluster_distribution, mortality_rates, icu_stay_rates, vt, scaler, pca, best_gmm = cluster_analysis(
         REPO_ROOT / "matrix_filled.csv",variance_thresh=0.01, pca_variance=0.90, min_cluster_size=50, hdb_prob_thresh=0.835, save_models=True)
     matrix_filled = pd.read_csv(REPO_ROOT / "matrix_filled.csv")
-    patient_row = matrix_filled.loc[matrix_filled['subject_id'] == 10003400].copy()
+    patient_row = matrix_filled.loc[matrix_filled['subject_id'] == 10035787].copy()
     df_dashboard = assign_patient(patient_row, df_core)
 Thereafter, the following line of code should be commented out in order to prevent calling the main function, due to the function's long execution time:
 
     df_core = main()
-For this GitHub example, the patient used is not a core patient (not in df_core or csv_dashboard.csv (before assigning new patient)). However, the feature row for this subject ID is available in matrix_filled.csv. To test other patients, simply replace the subject ID (10003400) in the code below with any ID present in matrix_filled and not present in df_core:
+For this GitHub example, the patient used is not a core patient (not in df_core or csv_dashboard.csv (before assigning new patient)). However, the feature row for this subject ID is available in matrix_filled.csv. To test other patients, simply replace the subject ID (10035787) in the code below with any ID present in matrix_filled and not present in df_core:
     
-    patient_row = matrix_filled.loc[matrix_filled['subject_id'] == 10003400].copy()
+    patient_row = matrix_filled.loc[matrix_filled['subject_id'] == 10035787].copy()
 
 
 ## Using CSV Files in the Dashboard
