@@ -223,9 +223,7 @@ For this GitHub example, the patient used is not a core patient (not in df_core 
 
 
 ## Using CSV Files in the Dashboard
-After running the main code, the folder csv_dashboard contains all the csv files that are used in the dashboard. All these files are already linked to the dashboard group sepsis 1, so you don’t need to connect them manually. These files allow you to recreate the dashboard if needed. To open the dashboard, launch the Power BI app and open the file Dashboard group 1 Sepsis.pbix, which was provided along with the code and other resources.
-
-If you want to add new patient information, you will need to run certain parts of the code again. The updated data will then automatically be reflected in the dashboard.
+After running the main code, the folder csv_dashboard contains all the csv files that are used in the dashboard. All these files are already linked to the dashboard group sepsis 1, so you don’t need to import them manually. However, the file paths leading up to csv_dashboard differs per user, this can be changed by specifying you own file path in the parameter Datafolderpath under Transform data in Power BI These files allow you to recreate the dashboard if needed. To open the dashboard, launch the Power BI app and open the file Dashboard group 1 Sepsis.pbix, which was provided along with the code and other resources.
 
 ## Contribution guidelines
 Other students or researchers are welcome to contribute to our project by building upon our code and dashboard. Contributions could include:
