@@ -212,7 +212,7 @@ To call and experiment with this function, at the bottom of the main.py script, 
     matrix_filled = pd.read_csv(REPO_ROOT / "matrix_filled.csv")
     patient_row = matrix_filled.loc[matrix_filled['subject_id'] == 10003400].copy()
     df_dashboard = assign_patient(patient_row, df_core)
-Thereafter, the following line of code should be commented in order to prevent calling the main function, due to the function's long execution time:
+Thereafter, the following line of code should be commented out in order to prevent calling the main function, due to the function's long execution time:
 
     df_core = main()
 For this GitHub example, the patient used is not a core patient (not in df_core or csv_dashboard.csv (before assigning new patient)). However, the feature row for this subject ID is available in matrix_filled.csv. To test other patients, simply replace the subject ID (10003400) in the code below with any ID present in matrix_filled and not present in df_core:
