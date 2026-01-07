@@ -300,7 +300,7 @@ def assign_patient(patient_feature_df, df_core):
 if __name__ == "__main__":
     df_core, bic_scores, sil, dbi, kw_df, cluster_distribution, mortality_rates, icu_stay_rates, vt, scaler, pca, best_gmm = cluster_analysis(PATH_DATA,variance_thresh=0.01, pca_variance=0.90, 
                      min_cluster_size=50, hdb_prob_thresh=0.835, save_models=True)
-    print(f" bic: {bic_scores}, dbi: {dbi}, sil: {sil}, mortality rate:{mortality_rates}")
+    print(f" bic: {bic_scores}, dbi: {dbi}, sil: {sil}, mortality rate:{mortality_rates}, ICU stay lengths:{icu_stay_rates}")
     
     mean, significance_df, dunn_output = comparing_clusters(df_core, kw_df)
     pd.set_option('display.max_rows', None)
