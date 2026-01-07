@@ -219,8 +219,6 @@ For this GitHub example, the patient used is not a core patient (not in df_core 
     
     patient_row = matrix_filled.loc[matrix_filled['subject_id'] == 10003400].copy()
 
-**ADDING which files you also get from the csv_dashboard and the clustering**
-
 
 ## Using CSV Files in the Dashboard
 After running the main code, the folder csv_dashboard contains all the csv files that are used in the dashboard. All these files are already linked to the dashboard group sepsis 1, so you don’t need to import them manually. However, the file paths leading up to csv_dashboard differs per user, this can be changed by specifying you own file path in the parameter Datafolderpath under Transform data in Power BI These files allow you to recreate the dashboard if needed. To open the dashboard, launch the Power BI app and open the file Dashboard group 1 Sepsis.pbix, which was provided along with the code and other resources.
